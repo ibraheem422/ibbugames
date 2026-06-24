@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -145,6 +146,11 @@
             display: none;
             width: 100%;
             text-align: center;
+        }
+
+        #guestNamePanel {
+            display: none;
+            width: 100%;
         }
 
         /* Shared Form Inputs for Login and Register fields */
@@ -450,6 +456,17 @@
             border: 1px solid rgba(74, 85, 162, 0.2);
             color: #4a55a2;
         }
+
+        /* Notification badge animation */
+        @keyframes badgePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+        }
+
+        .admin-badge.new-notification {
+            animation: badgePulse 0.6s ease-in-out infinite;
+            background-color: #FF6B6B;
+        }
     </style>
 </head>
 <body>
@@ -529,6 +546,9 @@
                 <div class="menu-element" id="adminNotificationsBtnContainer" style="display: none;">
                     <button id="adminNotificationsBtn" class="secondary-btn">👮 Admin Notifications <span id="notificationCount" class="admin-badge">0</span></button>
                 </div>
+                <div class="menu-element" id="adminRefreshBtnContainer" style="display: none;">
+                    <button id="adminRefreshBtn" class="secondary-btn" style="background-color: #5cb85c; font-size: 14px; padding: 8px 12px;">🔄 Check for New Requests</button>
+                </div>
                 <div class="menu-element">
                     <button id="startBtn">Start Game</button>
                 </div>
@@ -538,6 +558,31 @@
                 <div class="menu-element">
                     <button id="logoutBtn" class="secondary-btn" style="background-color: #d9534f;">🚪 Log Out</button>
                 </div>
+            </div>
+
+            <!-- ==================== GUEST NAME REQUEST PANEL ==================== -->
+            <div id="guestNamePanel">
+                <h2 style="margin-top: 20px; color: #FFD700; font-size: 28px; margin-bottom: 20px;">👤 Guest Information</h2>
+                
+                <div style="background-color: rgba(255, 215, 0, 0.1); border-left: 4px solid #FFD700; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
+                    <p style="font-size: 16px; margin: 10px 0; color: var(--text-color);">Welcome to Star Collector!</p>
+                    <p style="font-size: 14px; color: var(--label-color); margin: 10px 0;">Please enter your name before requesting guest access.</p>
+                </div>
+
+                <form id="guestNameForm" onsubmit="event.preventDefault();">
+                    <div class="menu-element" style="align-items: flex-start; margin: 0 0 20px 0;">
+                        <label class="form-label" for="guestNameInput">Your Name:</label>
+                        <input id="guestNameInput" type="text" placeholder="Enter your name..." required>
+                    </div>
+
+                    <div class="menu-element" style="margin: 10px 0;">
+                        <button id="guestSendRequestBtn" type="button" class="secondary-btn" style="background-color: #FFD700; color: #111424;">📤 Send Request to Admin</button>
+                    </div>
+
+                    <div class="menu-element" style="margin: 0;">
+                        <button id="guestBackBtn" type="button" class="secondary-btn" style="background-color: #d9534f;">❌ Back to Login</button>
+                    </div>
+                </form>
             </div>
 
             <!-- ==================== GUEST WAITING FOR APPROVAL PANEL ==================== -->
@@ -624,6 +669,7 @@
         const mainMenuPanel = document.getElementById("mainMenuPanel");
         const settingsPanel = document.getElementById("settingsPanel");
         const adminNotificationsPanel = document.getElementById("adminNotificationsPanel");
+        const guestNamePanel = document.getElementById("guestNamePanel");
         const guestWaitingPanel = document.getElementById("guestWaitingPanel");
         
         const startBtn = document.getElementById("startBtn");
@@ -657,6 +703,8 @@
         // Admin Elements
         const adminNotificationsBtnContainer = document.getElementById("adminNotificationsBtnContainer");
         const adminNotificationsBtn = document.getElementById("adminNotificationsBtn");
+        const adminRefreshBtn = document.getElementById("adminRefreshBtn");
+        const adminRefreshBtnContainer = document.getElementById("adminRefreshBtnContainer");
         const notificationsList = document.getElementById("notificationsList");
         const notificationCount = document.getElementById("notificationCount");
 
@@ -664,6 +712,11 @@
         const guestRefreshBtn = document.getElementById("guestRefreshBtn");
         const guestCancelBtn = document.getElementById("guestCancelBtn");
         const guestApprovalStatus = document.getElementById("guestApprovalStatus");
+
+        // Guest Name Elements
+        const guestNameInput = document.getElementById("guestNameInput");
+        const guestSendRequestBtn = document.getElementById("guestSendRequestBtn");
+        const guestBackBtn = document.getElementById("guestBackBtn");
 
         // Super Admin Credentials
         const SUPER_ADMIN_EMAIL = "ibraheem.muhammad.ai@gmail.com";
@@ -683,11 +736,146 @@
         let currentGuestSessionId = null;
         let authMode = "login"; // "login" or "signup"
         
+        // Notification polling variables
+        let adminNotificationPollingInterval = null;
+        let lastNotificationCount = 0;
+        let hasUnreadNotifications = false;
+        
         // Timer variables
         let gameSeconds = 0;
         let timerInterval = null;
 
-        // --- BULLETPROOF STORAGE ENGINE ---
+        // --- HYBRID CLOUD + LOCAL STORAGE ENGINE ---
+        const JSONBIN_API_KEY = "$2a$10$l/IxMkTTQAbLDmNazPeFGO5GkbebL52AKz0eMPIl2MOarxsfgqNMW";
+        const JSONBIN_API_URL = "https://api.jsonbin.io/v3";
+        
+        let BIN_ID = localStorage.getItem("STAR_COLLECTOR_BIN_ID");
+        let cloudEnabled = true;
+        let lastCloudSync = 0;
+        const SYNC_INTERVAL = 2000; // 2 seconds for faster sync
+
+        // Initialize cloud storage with fallback
+        async function initializeCloudStorage() {
+            try {
+                console.log("[Storage] Initializing...");
+                
+                if (!BIN_ID) {
+                    console.log("[JSONBin] Creating new bin...");
+                    
+                    const response = await fetch(`${JSONBIN_API_URL}/b`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-Master-Key": JSONBIN_API_KEY
+                        },
+                        body: JSON.stringify({
+                            starCollectorUsers: {},
+                            starCollectorPendingSignups: [],
+                            starCollectorApprovedGuests: [],
+                            starCollectorTheme: "dark",
+                            starCollectorStreaks: {},
+                            starCollectorHighScores: {}
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        BIN_ID = data.metadata.id;
+                        localStorage.setItem("STAR_COLLECTOR_BIN_ID", BIN_ID);
+                        console.log("[JSONBin] ✅ New bin created:", BIN_ID);
+                    } else {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                } else {
+                    console.log("[JSONBin] Using existing bin:", BIN_ID);
+                }
+                
+                console.log("[Storage] ✅ Cloud enabled");
+                cloudEnabled = true;
+                return true;
+                
+            } catch (e) {
+                console.warn("[JSONBin] Cloud disabled, using localStorage:", e.message);
+                cloudEnabled = false;
+                return false;
+            }
+        }
+
+        // Sync data from cloud to cache
+        async function syncCloudData() {
+            if (!cloudEnabled || !BIN_ID) return;
+            
+            try {
+                const now = Date.now();
+                if (now - lastCloudSync < SYNC_INTERVAL) return;
+                lastCloudSync = now;
+                
+                const response = await fetch(`${JSONBIN_API_URL}/b/${BIN_ID}/latest`, {
+                    headers: {
+                        "X-Master-Key": JSONBIN_API_KEY
+                    }
+                });
+                
+                if (response.ok) {
+                    const cloudData = (await response.json()).record;
+                    Object.keys(cloudData).forEach(key => {
+                        localStorage.setItem(key, JSON.stringify(cloudData[key]));
+                    });
+                    console.log("[Storage] ✅ Synced from cloud");
+                    return true;
+                }
+            } catch (e) {
+                console.warn("[JSONBin] Sync failed:", e.message);
+            }
+            return false;
+        }
+
+        // Upload data to cloud (fire and forget)
+        function uploadToCloud(key, value) {
+            if (!cloudEnabled || !BIN_ID) return;
+            
+            setTimeout(() => {
+                (async () => {
+                    try {
+                        const response = await fetch(`${JSONBIN_API_URL}/b/${BIN_ID}/latest`, {
+                            headers: {
+                                "X-Master-Key": JSONBIN_API_KEY
+                            }
+                        });
+                        
+                        if (!response.ok) throw new Error("Failed to fetch");
+                        
+                        let currentData = (await response.json()).record;
+                        
+                        let parsedValue;
+                        try {
+                            parsedValue = JSON.parse(value);
+                        } catch {
+                            parsedValue = value;
+                        }
+                        
+                        currentData[key] = parsedValue;
+                        
+                        const updateResponse = await fetch(`${JSONBIN_API_URL}/b/${BIN_ID}`, {
+                            method: "PUT",
+                            headers: {
+                                "Content-Type": "application/json",
+                                "X-Master-Key": JSONBIN_API_KEY
+                            },
+                            body: JSON.stringify(currentData)
+                        });
+                        
+                        if (updateResponse.ok) {
+                            console.log(`[Storage] ✅ Uploaded ${key} to cloud`);
+                        }
+                    } catch (e) {
+                        console.warn("[JSONBin] Upload failed:", e.message);
+                    }
+                })();
+            }, 100);
+        }
+
+        // Fast local storage (always works)
         const storage = {
             getItem(key) {
                 try {
@@ -699,11 +887,130 @@
             setItem(key, value) {
                 try {
                     localStorage.setItem(key, value);
+                    uploadToCloud(key, value);
                 } catch (e) {
-                    console.log("Saving is unavailable on this device.");
+                    console.error("[Storage] Failed:", e);
                 }
             }
         };
+
+        // Initialize on page load
+        initializeCloudStorage().catch(e => {
+            console.warn("[Storage] Initialization failed, using localStorage fallback");
+            cloudEnabled = false;
+        });
+
+        // --- NOTIFICATION SYSTEM ---
+        function playNotificationSound() {
+            // Create a simple beep sound using Web Audio API
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 800;
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.5);
+            } catch (e) {
+                console.log("Could not play notification sound");
+            }
+        }
+
+        function showBrowserNotification(title, options = {}) {
+            if ("Notification" in window && Notification.permission === "granted") {
+                new Notification(title, {
+                    icon: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Ctext y="0.9em" font-size="90"%3E⭐%3C/text%3E%3C/svg%3E',
+                    ...options
+                });
+            }
+        }
+
+        // Request notification permission
+        if ("Notification" in window && Notification.permission === "default") {
+            Notification.requestPermission();
+        }
+
+        // Auto-polling for admin notifications
+        function startAdminNotificationPolling() {
+            if (adminNotificationPollingInterval) {
+                clearInterval(adminNotificationPollingInterval);
+            }
+
+            // Check immediately when polling starts
+            checkAndUpdateNotifications();
+
+            adminNotificationPollingInterval = setInterval(() => {
+                checkAndUpdateNotifications();
+            }, 2000); // Check every 2 seconds
+        }
+
+        function checkAndUpdateNotifications() {
+            if (!isAdmin) {
+                return;
+            }
+
+            // Sync from cloud first (get latest data from JSONBin)
+            syncCloudData().then(() => {
+                let pendingSignups = [];
+                const savedPending = storage.getItem("starCollectorPendingSignups");
+                if (savedPending) {
+                    try {
+                        pendingSignups = JSON.parse(savedPending);
+                    } catch (e) {
+                        pendingSignups = [];
+                    }
+                }
+
+                const currentCount = pendingSignups.length;
+                
+                // Update notification count
+                notificationCount.textContent = currentCount;
+
+                console.log(`[Admin Polling] Current notifications: ${currentCount}, Last: ${lastNotificationCount}`);
+
+                // New notification arrived!
+                if (currentCount > lastNotificationCount && currentCount > 0) {
+                    console.log(`[Admin Alert] New notification detected! ${currentCount} total`);
+                    lastNotificationCount = currentCount;
+                    playNotificationSound();
+                    showBrowserNotification("⭐ New Admin Request", {
+                        body: `You have ${currentCount} pending request(s) to review!`
+                    });
+                    
+                    // Add pulse animation to badge
+                    notificationCount.classList.add("new-notification");
+                    setTimeout(() => {
+                        notificationCount.classList.remove("new-notification");
+                    }, 3000);
+                }
+            });
+        }
+
+        function stopAdminNotificationPolling() {
+            if (adminNotificationPollingInterval) {
+                clearInterval(adminNotificationPollingInterval);
+                adminNotificationPollingInterval = null;
+            }
+        }
+
+        // Listen for storage changes from other tabs
+        window.addEventListener("storage", (e) => {
+            if (e.key === "starCollectorPendingSignups" && isAdmin) {
+                playNotificationSound();
+                showBrowserNotification("⭐ New Admin Request", {
+                    body: "Someone sent a new request for admin approval!"
+                });
+                loadAdminNotifications();
+            }
+        });
 
         // --- AUTH & LOGIN SYSTEM LOGIC ---
         
@@ -836,16 +1143,21 @@
                 }
             } else {
                 // Log In Action
-                // Check if user is super admin
-                if (username === SUPER_ADMIN_EMAIL && password === SUPER_ADMIN_PASSWORD) {
+                const lowerUsername = username.toLowerCase();
+                
+                // Check if user is super admin (case-insensitive)
+                if (lowerUsername === SUPER_ADMIN_EMAIL.toLowerCase() && password === SUPER_ADMIN_PASSWORD) {
                     currentPilot = "Super Admin";
                     isGuest = false;
                     isAdmin = true;
                     enterMainDashboard();
-                } else if (users[lowerUser]) {
+                } else if (lowerUsername === SUPER_ADMIN_EMAIL.toLowerCase()) {
+                    // Correct email but wrong password
+                    displayAuthMessage("Invalid password for admin account.");
+                } else if (users[lowerUsername]) {
                     // User exists in approved list
-                    if (users[lowerUser].password === password) {
-                        currentPilot = users[lowerUser].originalName;
+                    if (users[lowerUsername].password === password) {
+                        currentPilot = users[lowerUsername].originalName;
                         isGuest = false;
                         isAdmin = false;
                         enterMainDashboard();
@@ -864,7 +1176,7 @@
                         }
                     }
                     
-                    const isPending = pendingSignups.find(s => s.username.toLowerCase() === lowerUser);
+                    const isPending = pendingSignups.find(s => s.username.toLowerCase() === lowerUsername);
                     if (isPending) {
                         displayAuthMessage("⏳ Your account is pending admin approval. Please wait.");
                     } else {
@@ -876,6 +1188,34 @@
 
         // Guest Play Mode Button
         guestPlayBtn.addEventListener("click", () => {
+            // Show guest name panel
+            loginPanel.style.display = "none";
+            guestNamePanel.style.display = "block";
+            guestNameInput.value = "";
+            guestNameInput.focus();
+        });
+
+        // Guest Back Button (from name panel)
+        guestBackBtn.addEventListener("click", () => {
+            guestNamePanel.style.display = "none";
+            loginPanel.style.display = "block";
+            guestNameInput.value = "";
+        });
+
+        // Guest Send Request Button
+        guestSendRequestBtn.addEventListener("click", () => {
+            const guestName = guestNameInput.value.trim();
+
+            if (!guestName) {
+                alert("Please enter your name before sending request.");
+                return;
+            }
+
+            if (guestName.length < 2) {
+                alert("Name must be at least 2 characters.");
+                return;
+            }
+
             // Generate unique guest session ID
             currentGuestSessionId = `GUEST_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
             
@@ -890,12 +1230,12 @@
                 }
             }
 
-            // Add guest play notification
+            // Add guest play notification with guest's name
             pendingSignups.push({
                 sessionId: currentGuestSessionId,
                 username: currentGuestSessionId,
-                fullName: "Guest Player",
-                originalName: "Guest Player",
+                fullName: guestName,
+                originalName: guestName,
                 password: "N/A",
                 timestamp: new Date().toLocaleString(),
                 type: "guest",
@@ -905,7 +1245,7 @@
             storage.setItem("starCollectorPendingSignups", JSON.stringify(pendingSignups));
 
             // Show waiting panel
-            loginPanel.style.display = "none";
+            guestNamePanel.style.display = "none";
             guestWaitingPanel.style.display = "block";
             guestApprovalStatus.textContent = "Pending...";
 
@@ -1012,14 +1352,20 @@
             storage.setItem("starCollectorPendingSignups", JSON.stringify(pendingSignups));
 
             guestWaitingPanel.style.display = "none";
+            guestNamePanel.style.display = "none";
             loginPanel.style.display = "block";
             currentGuestSessionId = null;
+            guestNameInput.value = "";
             alert("❌ Guest request cancelled.");
         });
         logoutBtn.addEventListener("click", () => {
             currentPilot = "";
             isGuest = false;
             isAdmin = false;
+            lastNotificationCount = 0;
+            
+            // Stop notification polling
+            stopAdminNotificationPolling();
             
             // Toggle panels
             mainMenuPanel.style.display = "none";
@@ -1069,18 +1415,10 @@
                 // Show action buttons for both signup and guest requests
                 const actionsDiv = document.createElement('div');
                 actionsDiv.className = 'notification-actions';
-                
-                if (isGuest) {
-                    actionsDiv.innerHTML = `
-                        <button class="accept-btn" onclick="approveSignup(${index})">✅ Accept</button>
-                        <button class="decline-btn" onclick="declineSignup(${index})">❌ Decline</button>
-                    `;
-                } else {
-                    actionsDiv.innerHTML = `
-                        <button class="accept-btn" onclick="approveSignup(${index})">✅ Accept</button>
-                        <button class="decline-btn" onclick="declineSignup(${index})">❌ Decline</button>
-                    `;
-                }
+                actionsDiv.innerHTML = `
+                    <button class="accept-btn" onclick="approveSignup(${index})">✅ Accept</button>
+                    <button class="decline-btn" onclick="declineSignup(${index})">❌ Decline</button>
+                `;
                 
                 notificationDiv.appendChild(actionsDiv);
                 notificationsList.appendChild(notificationDiv);
@@ -1167,7 +1505,7 @@
 
                 // Reload notifications
                 loadAdminNotifications();
-                alert(`✅ Account for "${signup.fullName}" has been APPROVED! They can now login.`);
+                alert(`✅ Account for "${signup.fullName}" has been APPROVED! They can now log in.`);
             }
         }
 
@@ -1212,6 +1550,13 @@
             mainMenuPanel.style.display = "block";
         });
 
+        // Admin Refresh Button
+        adminRefreshBtn.addEventListener("click", () => {
+            console.log("[Admin] Manual refresh clicked");
+            checkAndUpdateNotifications();
+            alert("✅ Checked for new requests! ");
+        });
+
         // Function to load the Dashboard once authorized
         function enterMainDashboard() {
             loginPanel.style.display = "none";
@@ -1221,9 +1566,22 @@
             // Show admin button only for super admin
             if (isAdmin) {
                 adminNotificationsBtnContainer.style.display = "block";
+                adminRefreshBtnContainer.style.display = "block";
+                
+                // Reset notification tracking
+                lastNotificationCount = 0;
+                notificationCount.textContent = "0";
+                
+                // Load initial notifications
                 loadAdminNotifications();
+                
+                console.log("[Admin] Logged in - starting notification polling");
+                // Start auto-polling for new notifications
+                startAdminNotificationPolling();
             } else {
                 adminNotificationsBtnContainer.style.display = "none";
+                adminRefreshBtnContainer.style.display = "none";
+                stopAdminNotificationPolling();
             }
 
             // Load Streak System 
