@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -832,6 +833,74 @@
             return false;
         }
 
+        // SAFE & IMMEDIATE: Directly fetch-modify-write to the cloud bin, awaited (no race condition).
+        // Used for critical actions like signups/guest requests so they reliably reach JSONBin
+        // before another device's poll happens to read at the same instant.
+        async function safeCloudUpdate(key, newValue) {
+            if (!cloudEnabled || !BIN_ID) {
+                // Fallback: still save locally so nothing is lost
+                localStorage.setItem(key, JSON.stringify(newValue));
+                return false;
+            }
+            try {
+                const response = await fetch(`${JSONBIN_API_URL}/b/${BIN_ID}/latest`, {
+                    headers: { "X-Master-Key": JSONBIN_API_KEY }
+                });
+                if (!response.ok) throw new Error("Fetch failed");
+
+                let currentData = (await response.json()).record;
+                currentData[key] = newValue;
+
+                const updateResponse = await fetch(`${JSONBIN_API_URL}/b/${BIN_ID}`, {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-Master-Key": JSONBIN_API_KEY
+                    },
+                    body: JSON.stringify(currentData)
+                });
+
+                if (updateResponse.ok) {
+                    localStorage.setItem(key, JSON.stringify(newValue));
+                    console.log(`[Storage] ✅ Safely updated ${key} in cloud (immediate)`);
+                    return true;
+                } else {
+                    throw new Error("Update failed");
+                }
+            } catch (e) {
+                console.warn("[JSONBin] Safe update failed, saving locally only:", e.message);
+                localStorage.setItem(key, JSON.stringify(newValue));
+                return false;
+            }
+        }
+
+        // Always fetch the LATEST pending signups directly from cloud before modifying them,
+        // to avoid acting on stale/cached local data from a different device's earlier sync.
+        async function getFreshPendingSignups() {
+            if (cloudEnabled && BIN_ID) {
+                try {
+                    const response = await fetch(`${JSONBIN_API_URL}/b/${BIN_ID}/latest`, {
+                        headers: { "X-Master-Key": JSONBIN_API_KEY }
+                    });
+                    if (response.ok) {
+                        const cloudData = (await response.json()).record;
+                        const fresh = cloudData.starCollectorPendingSignups || [];
+                        localStorage.setItem("starCollectorPendingSignups", JSON.stringify(fresh));
+                        return fresh;
+                    }
+                } catch (e) {
+                    console.warn("[JSONBin] Could not fetch fresh pending signups:", e.message);
+                }
+            }
+            // Fallback to local cache
+            const saved = storage.getItem("starCollectorPendingSignups");
+            try {
+                return saved ? JSON.parse(saved) : [];
+            } catch {
+                return [];
+            }
+        }
+
         // Upload data to cloud (fire and forget)
         function uploadToCloud(key, value) {
             if (!cloudEnabled || !BIN_ID) return;
@@ -1056,7 +1125,7 @@
         });
 
         // Submit credentials
-        authSubmitBtn.addEventListener("click", () => {
+        authSubmitBtn.addEventListener("click", async () => {
             const fullName = authNameInput.value.trim();
             const username = authUsernameInput.value.trim();
             const password = authPasswordInput.value;
@@ -1088,7 +1157,8 @@
                 return;
             }
 
-            // Retrieve registered users database
+            // Retrieve registered users database (sync from cloud first to get latest)
+            await syncCloudData();
             let users = {};
             const savedUsers = storage.getItem("starCollectorUsers");
             if (savedUsers) {
@@ -1107,16 +1177,8 @@
                 if (users[lowerUser]) {
                     displayAuthMessage("Username has already been chosen in this sector.");
                 } else {
-                    // Check if already pending
-                    let pendingSignups = [];
-                    const savedPending = storage.getItem("starCollectorPendingSignups");
-                    if (savedPending) {
-                        try {
-                            pendingSignups = JSON.parse(savedPending);
-                        } catch (e) {
-                            pendingSignups = [];
-                        }
-                    }
+                    // Get the FRESHEST pending list directly from cloud (avoids stale-data race condition)
+                    let pendingSignups = await getFreshPendingSignups();
 
                     // Check if username already in pending
                     const alreadyPending = pendingSignups.find(signup => signup.username.toLowerCase() === lowerUser);
@@ -1133,8 +1195,14 @@
                             type: "signup"
                         });
                         
-                        storage.setItem("starCollectorPendingSignups", JSON.stringify(pendingSignups));
-                        displayAuthMessage("Account request submitted! Admin will review shortly.", true);
+                        displayAuthMessage("Submitting request...", true);
+                        const success = await safeCloudUpdate("starCollectorPendingSignups", pendingSignups);
+                        
+                        if (success) {
+                            displayAuthMessage("✅ Account request submitted! Admin will review shortly.", true);
+                        } else {
+                            displayAuthMessage("⚠️ Submitted locally, but cloud sync had an issue. Try refreshing.", true);
+                        }
                         
                         // Automatically redirect to login tab for cleanliness
                         setTimeout(() => {
@@ -1167,16 +1235,8 @@
                         displayAuthMessage("Invalid password. Please try again.");
                     }
                 } else {
-                    // Check if pending approval
-                    let pendingSignups = [];
-                    const savedPending = storage.getItem("starCollectorPendingSignups");
-                    if (savedPending) {
-                        try {
-                            pendingSignups = JSON.parse(savedPending);
-                        } catch (e) {
-                            pendingSignups = [];
-                        }
-                    }
+                    // Check if pending approval (fetch fresh to be accurate)
+                    let pendingSignups = await getFreshPendingSignups();
                     
                     const isPending = pendingSignups.find(s => s.username.toLowerCase() === lowerUsername);
                     if (isPending) {
