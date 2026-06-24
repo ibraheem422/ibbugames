@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -749,7 +748,10 @@
         const JSONBIN_API_KEY = "$2a$10$l/IxMkTTQAbLDmNazPeFGO5GkbebL52AKz0eMPIl2MOarxsfgqNMW";
         const JSONBIN_API_URL = "https://api.jsonbin.io/v3";
         
-        let BIN_ID = localStorage.getItem("STAR_COLLECTOR_BIN_ID");
+        // IMPORTANT: This is a FIXED shared Bin ID so ALL devices read/write the SAME cloud data.
+        // Each device must NOT generate its own bin - that was the bug causing notifications to not sync.
+        const SHARED_BIN_ID = "6a3b62b0f5f4af5e2926f9ae";
+        let BIN_ID = SHARED_BIN_ID;
         let cloudEnabled = true;
         let lastCloudSync = 0;
         const SYNC_INTERVAL = 2000; // 2 seconds for faster sync
@@ -1505,7 +1507,7 @@
 
                 // Reload notifications
                 loadAdminNotifications();
-                alert(`✅ Account for "${signup.fullName}" has been APPROVED! They can now log in.`);
+                alert(`✅ Account for "${signup.fullName}" has been APPROVED! They can now login.`);
             }
         }
 
@@ -1554,7 +1556,7 @@
         adminRefreshBtn.addEventListener("click", () => {
             console.log("[Admin] Manual refresh clicked");
             checkAndUpdateNotifications();
-            alert("✅ Checked for new requests! ");
+            alert("✅ Checked for new requests!");
         });
 
         // Function to load the Dashboard once authorized
