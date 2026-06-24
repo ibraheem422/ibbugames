@@ -744,7 +744,137 @@
         let gameSeconds = 0;
         let timerInterval = null;
 
-        // --- BULLETPROOF STORAGE ENGINE ---
+        // --- HYBRID CLOUD + LOCAL STORAGE ENGINE ---
+        const JSONBIN_API_KEY = "$2a$10$l/IxMkTTQAbLDmNazPeFGO5GkbebL52AKz0eMPIl2MOarxsfgqNMW";
+        const JSONBIN_API_URL = "https://api.jsonbin.io/v3";
+        
+        let BIN_ID = localStorage.getItem("STAR_COLLECTOR_BIN_ID");
+        let cloudEnabled = true;
+        let lastCloudSync = 0;
+        const SYNC_INTERVAL = 2000; // 2 seconds for faster sync
+
+        // Initialize cloud storage with fallback
+        async function initializeCloudStorage() {
+            try {
+                console.log("[Storage] Initializing...");
+                
+                if (!BIN_ID) {
+                    console.log("[JSONBin] Creating new bin...");
+                    
+                    const response = await fetch(`${JSONBIN_API_URL}/b`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-Master-Key": JSONBIN_API_KEY
+                        },
+                        body: JSON.stringify({
+                            starCollectorUsers: {},
+                            starCollectorPendingSignups: [],
+                            starCollectorApprovedGuests: [],
+                            starCollectorTheme: "dark",
+                            starCollectorStreaks: {},
+                            starCollectorHighScores: {}
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        BIN_ID = data.metadata.id;
+                        localStorage.setItem("STAR_COLLECTOR_BIN_ID", BIN_ID);
+                        console.log("[JSONBin] ✅ New bin created:", BIN_ID);
+                    } else {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                } else {
+                    console.log("[JSONBin] Using existing bin:", BIN_ID);
+                }
+                
+                console.log("[Storage] ✅ Cloud enabled");
+                cloudEnabled = true;
+                return true;
+                
+            } catch (e) {
+                console.warn("[JSONBin] Cloud disabled, using localStorage:", e.message);
+                cloudEnabled = false;
+                return false;
+            }
+        }
+
+        // Sync data from cloud to cache
+        async function syncCloudData() {
+            if (!cloudEnabled || !BIN_ID) return;
+            
+            try {
+                const now = Date.now();
+                if (now - lastCloudSync < SYNC_INTERVAL) return;
+                lastCloudSync = now;
+                
+                const response = await fetch(`${JSONBIN_API_URL}/b/${BIN_ID}/latest`, {
+                    headers: {
+                        "X-Master-Key": JSONBIN_API_KEY
+                    }
+                });
+                
+                if (response.ok) {
+                    const cloudData = (await response.json()).record;
+                    Object.keys(cloudData).forEach(key => {
+                        localStorage.setItem(key, JSON.stringify(cloudData[key]));
+                    });
+                    console.log("[Storage] ✅ Synced from cloud");
+                    return true;
+                }
+            } catch (e) {
+                console.warn("[JSONBin] Sync failed:", e.message);
+            }
+            return false;
+        }
+
+        // Upload data to cloud (fire and forget)
+        function uploadToCloud(key, value) {
+            if (!cloudEnabled || !BIN_ID) return;
+            
+            setTimeout(() => {
+                (async () => {
+                    try {
+                        const response = await fetch(`${JSONBIN_API_URL}/b/${BIN_ID}/latest`, {
+                            headers: {
+                                "X-Master-Key": JSONBIN_API_KEY
+                            }
+                        });
+                        
+                        if (!response.ok) throw new Error("Failed to fetch");
+                        
+                        let currentData = (await response.json()).record;
+                        
+                        let parsedValue;
+                        try {
+                            parsedValue = JSON.parse(value);
+                        } catch {
+                            parsedValue = value;
+                        }
+                        
+                        currentData[key] = parsedValue;
+                        
+                        const updateResponse = await fetch(`${JSONBIN_API_URL}/b/${BIN_ID}`, {
+                            method: "PUT",
+                            headers: {
+                                "Content-Type": "application/json",
+                                "X-Master-Key": JSONBIN_API_KEY
+                            },
+                            body: JSON.stringify(currentData)
+                        });
+                        
+                        if (updateResponse.ok) {
+                            console.log(`[Storage] ✅ Uploaded ${key} to cloud`);
+                        }
+                    } catch (e) {
+                        console.warn("[JSONBin] Upload failed:", e.message);
+                    }
+                })();
+            }, 100);
+        }
+
+        // Fast local storage (always works)
         const storage = {
             getItem(key) {
                 try {
@@ -756,11 +886,18 @@
             setItem(key, value) {
                 try {
                     localStorage.setItem(key, value);
+                    uploadToCloud(key, value);
                 } catch (e) {
-                    console.log("Saving is unavailable on this device.");
+                    console.error("[Storage] Failed:", e);
                 }
             }
         };
+
+        // Initialize on page load
+        initializeCloudStorage().catch(e => {
+            console.warn("[Storage] Initialization failed, using localStorage fallback");
+            cloudEnabled = false;
+        });
 
         // --- NOTIFICATION SYSTEM ---
         function playNotificationSound() {
@@ -819,38 +956,41 @@
                 return;
             }
 
-            let pendingSignups = [];
-            const savedPending = storage.getItem("starCollectorPendingSignups");
-            if (savedPending) {
-                try {
-                    pendingSignups = JSON.parse(savedPending);
-                } catch (e) {
-                    pendingSignups = [];
+            // Sync from cloud first (get latest data from JSONBin)
+            syncCloudData().then(() => {
+                let pendingSignups = [];
+                const savedPending = storage.getItem("starCollectorPendingSignups");
+                if (savedPending) {
+                    try {
+                        pendingSignups = JSON.parse(savedPending);
+                    } catch (e) {
+                        pendingSignups = [];
+                    }
                 }
-            }
 
-            const currentCount = pendingSignups.length;
-            
-            // Update notification count
-            notificationCount.textContent = currentCount;
-
-            console.log(`[Admin Polling] Current notifications: ${currentCount}, Last: ${lastNotificationCount}`);
-
-            // New notification arrived!
-            if (currentCount > lastNotificationCount && currentCount > 0) {
-                console.log(`[Admin Alert] New notification detected! ${currentCount} total`);
-                lastNotificationCount = currentCount;
-                playNotificationSound();
-                showBrowserNotification("⭐ New Admin Request", {
-                    body: `You have ${currentCount} pending request(s) to review!`
-                });
+                const currentCount = pendingSignups.length;
                 
-                // Add pulse animation to badge
-                notificationCount.classList.add("new-notification");
-                setTimeout(() => {
-                    notificationCount.classList.remove("new-notification");
-                }, 3000);
-            }
+                // Update notification count
+                notificationCount.textContent = currentCount;
+
+                console.log(`[Admin Polling] Current notifications: ${currentCount}, Last: ${lastNotificationCount}`);
+
+                // New notification arrived!
+                if (currentCount > lastNotificationCount && currentCount > 0) {
+                    console.log(`[Admin Alert] New notification detected! ${currentCount} total`);
+                    lastNotificationCount = currentCount;
+                    playNotificationSound();
+                    showBrowserNotification("⭐ New Admin Request", {
+                        body: `You have ${currentCount} pending request(s) to review!`
+                    });
+                    
+                    // Add pulse animation to badge
+                    notificationCount.classList.add("new-notification");
+                    setTimeout(() => {
+                        notificationCount.classList.remove("new-notification");
+                    }, 3000);
+                }
+            });
         }
 
         function stopAdminNotificationPolling() {
@@ -1274,18 +1414,10 @@
                 // Show action buttons for both signup and guest requests
                 const actionsDiv = document.createElement('div');
                 actionsDiv.className = 'notification-actions';
-                
-                if (isGuest) {
-                    actionsDiv.innerHTML = `
-                        <button class="accept-btn" onclick="approveSignup(${index})">✅ Accept</button>
-                        <button class="decline-btn" onclick="declineSignup(${index})">❌ Decline</button>
-                    `;
-                } else {
-                    actionsDiv.innerHTML = `
-                        <button class="accept-btn" onclick="approveSignup(${index})">✅ Accept</button>
-                        <button class="decline-btn" onclick="declineSignup(${index})">❌ Decline</button>
-                    `;
-                }
+                actionsDiv.innerHTML = `
+                    <button class="accept-btn" onclick="approveSignup(${index})">✅ Accept</button>
+                    <button class="decline-btn" onclick="declineSignup(${index})">❌ Decline</button>
+                `;
                 
                 notificationDiv.appendChild(actionsDiv);
                 notificationsList.appendChild(notificationDiv);
