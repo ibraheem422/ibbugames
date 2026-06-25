@@ -745,6 +745,20 @@
         let gameSeconds = 0;
         let timerInterval = null;
 
+        // --- URL PATH SYNC ---
+        // Updates the browser's address bar to reflect the current screen, without reloading the page.
+        // Uses History API (pushState) so back/forward and bookmarking feel natural.
+        function updateURL(path) {
+            try {
+                const newUrl = `${window.location.origin}${window.location.pathname}#${path}`;
+                if (window.location.href !== newUrl) {
+                    window.history.pushState({ path: path }, "", newUrl);
+                }
+            } catch (e) {
+                console.warn("[URL] Could not update URL:", e.message);
+            }
+        }
+
         // --- HYBRID CLOUD + LOCAL STORAGE ENGINE ---
         const JSONBIN_API_KEY = "$2a$10$l/IxMkTTQAbLDmNazPeFGO5GkbebL52AKz0eMPIl2MOarxsfgqNMW";
         const JSONBIN_API_URL = "https://api.jsonbin.io/v3";
@@ -1112,6 +1126,7 @@
             signupNameField.style.display = "none";
             authNameInput.removeAttribute("required");
             clearAuthFields();
+            updateURL("Login");
         });
 
         authSignUpTab.addEventListener("click", () => {
@@ -1122,6 +1137,7 @@
             signupNameField.style.display = "block";
             authNameInput.setAttribute("required", "required");
             clearAuthFields();
+            updateURL("Sign-up");
         });
 
         // Submit credentials
@@ -1265,7 +1281,7 @@
         });
 
         // Guest Send Request Button
-        guestSendRequestBtn.addEventListener("click", () => {
+        guestSendRequestBtn.addEventListener("click", async () => {
             const guestName = guestNameInput.value.trim();
 
             if (!guestName) {
@@ -1281,16 +1297,8 @@
             // Generate unique guest session ID
             currentGuestSessionId = `GUEST_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
             
-            // Create guest play notification
-            let pendingSignups = [];
-            const savedPending = storage.getItem("starCollectorPendingSignups");
-            if (savedPending) {
-                try {
-                    pendingSignups = JSON.parse(savedPending);
-                } catch (e) {
-                    pendingSignups = [];
-                }
-            }
+            // Get freshest pending list directly from cloud to avoid stale-data race condition
+            let pendingSignups = await getFreshPendingSignups();
 
             // Add guest play notification with guest's name
             pendingSignups.push({
@@ -1304,7 +1312,8 @@
                 status: "pending"
             });
             
-            storage.setItem("starCollectorPendingSignups", JSON.stringify(pendingSignups));
+            // Write immediately and safely so admin sees it right away
+            await safeCloudUpdate("starCollectorPendingSignups", pendingSignups);
 
             // Show waiting panel
             guestNamePanel.style.display = "none";
@@ -1321,7 +1330,11 @@
         });
 
         // Check Guest Approval Status
-        function checkGuestApprovalStatus(intervalId) {
+        async function checkGuestApprovalStatus(intervalId) {
+            // Sync the latest cloud data first - this was the bug: it was only checking
+            // the local cache, which never updated after the admin approved on another device.
+            await syncCloudData();
+
             let pendingSignups = [];
             const savedPending = storage.getItem("starCollectorPendingSignups");
             if (savedPending) {
@@ -1433,6 +1446,7 @@
             mainMenuPanel.style.display = "none";
             loginPanel.style.display = "block";
             clearAuthFields();
+            updateURL("Login");
         });
 
         // --- ADMIN NOTIFICATIONS SYSTEM ---
@@ -1487,23 +1501,17 @@
             });
         }
 
-        function approveSignup(index) {
-            let pendingSignups = [];
-            const savedPending = storage.getItem("starCollectorPendingSignups");
-            if (savedPending) {
-                try {
-                    pendingSignups = JSON.parse(savedPending);
-                } catch (e) {
-                    pendingSignups = [];
-                }
-            }
+        async function approveSignup(index) {
+            // Fetch the freshest pending list directly from cloud to avoid acting on stale data
+            let pendingSignups = await getFreshPendingSignups();
 
             if (index >= 0 && index < pendingSignups.length) {
                 const signup = pendingSignups[index];
                 
                 // Handle guest play approval differently
                 if (signup.type === "guest") {
-                    // Move to approved guests
+                    // Move to approved guests - fetch fresh approved list first
+                    await syncCloudData();
                     let approvedGuests = [];
                     const savedApproved = storage.getItem("starCollectorApprovedGuests");
                     if (savedApproved) {
@@ -1519,11 +1527,12 @@
                         approvedAt: new Date().toLocaleString()
                     });
 
-                    storage.setItem("starCollectorApprovedGuests", JSON.stringify(approvedGuests));
+                    // Write approved guests immediately and safely
+                    await safeCloudUpdate("starCollectorApprovedGuests", approvedGuests);
 
-                    // Remove from pending
+                    // Remove from pending and write immediately and safely
                     pendingSignups.splice(index, 1);
-                    storage.setItem("starCollectorPendingSignups", JSON.stringify(pendingSignups));
+                    await safeCloudUpdate("starCollectorPendingSignups", pendingSignups);
 
                     // Reload notifications
                     loadAdminNotifications();
@@ -1533,7 +1542,8 @@
                 
                 const lowerUsername = signup.username.toLowerCase();
                 
-                // Add to approved users
+                // Add to approved users - fetch fresh users list first
+                await syncCloudData();
                 let users = {};
                 const savedUsers = storage.getItem("starCollectorUsers");
                 if (savedUsers) {
@@ -1552,18 +1562,15 @@
                     approvedDate: new Date().toLocaleString()
                 };
                 
-                // Ensure storage is successful
-                try {
-                    storage.setItem("starCollectorUsers", JSON.stringify(users));
-                    console.log(`Account approved: ${lowerUsername}`, users[lowerUsername]);
-                } catch (e) {
-                    alert(`❌ Error saving approved account: ${e}`);
-                    return;
+                // Write users immediately and safely
+                const usersSaved = await safeCloudUpdate("starCollectorUsers", users);
+                if (!usersSaved) {
+                    console.warn(`Account approval for ${lowerUsername} may not have synced to cloud properly`);
                 }
 
-                // Remove from pending
+                // Remove from pending and write immediately and safely
                 pendingSignups.splice(index, 1);
-                storage.setItem("starCollectorPendingSignups", JSON.stringify(pendingSignups));
+                await safeCloudUpdate("starCollectorPendingSignups", pendingSignups);
 
                 // Reload notifications
                 loadAdminNotifications();
@@ -1571,24 +1578,16 @@
             }
         }
 
-        function declineSignup(index) {
-            let pendingSignups = [];
-            const savedPending = storage.getItem("starCollectorPendingSignups");
-            if (savedPending) {
-                try {
-                    pendingSignups = JSON.parse(savedPending);
-                } catch (e) {
-                    pendingSignups = [];
-                }
-            }
+        async function declineSignup(index) {
+            let pendingSignups = await getFreshPendingSignups();
 
             if (index >= 0 && index < pendingSignups.length) {
                 const signup = pendingSignups[index];
                 const isGuest = signup.type === "guest";
                 
-                // Remove from pending
+                // Remove from pending and write immediately and safely
                 pendingSignups.splice(index, 1);
-                storage.setItem("starCollectorPendingSignups", JSON.stringify(pendingSignups));
+                await safeCloudUpdate("starCollectorPendingSignups", pendingSignups);
 
                 // Reload notifications
                 loadAdminNotifications();
@@ -1605,11 +1604,13 @@
             mainMenuPanel.style.display = "none";
             adminNotificationsPanel.style.display = "block";
             loadAdminNotifications();
+            updateURL("Admin-Notifications");
         });
 
         backFromAdminBtn.addEventListener("click", () => {
             adminNotificationsPanel.style.display = "none";
             mainMenuPanel.style.display = "block";
+            updateURL("Home-Page");
         });
 
         // Admin Refresh Button
@@ -1624,6 +1625,7 @@
             loginPanel.style.display = "none";
             mainMenuPanel.style.display = "block";
             activePilotSpan.textContent = currentPilot;
+            updateURL("Home-Page");
 
             // Show admin button only for super admin
             if (isAdmin) {
@@ -1674,6 +1676,9 @@
         const savedTheme = storage.getItem("starCollectorTheme") || "dark";
         document.documentElement.setAttribute("data-theme", savedTheme);
         themeModeSelect.value = savedTheme;
+
+        // Set the initial URL path to reflect the starting screen (login page)
+        updateURL("Login");
 
         // Watch for manual theme option updates
         themeModeSelect.addEventListener("change", function() {
@@ -1790,11 +1795,13 @@
         settingsBtn.addEventListener("click", function() {
             mainMenuPanel.style.display = "none";
             settingsPanel.style.display = "block";
+            updateURL("Adjusting-Game-Settings");
         });
 
         backBtn.addEventListener("click", function() {
             settingsPanel.style.display = "none";
             mainMenuPanel.style.display = "block";
+            updateURL("Home-Page");
         });
 
         // Start button trigger logic
@@ -1839,6 +1846,7 @@
             statsDiv.style.display = "flex";
             canvas.style.display = "block";
             controlsDiv.style.display = "block";
+            updateURL("Playing-Game");
 
             // Start Live Timer
             startTimer();
@@ -1917,6 +1925,7 @@
             settingsPanel.style.display = "none";
             adminNotificationsPanel.style.display = "none";
             mainMenuPanel.style.display = "block";
+            updateURL("Home-Page");
         });
     </script>
 
