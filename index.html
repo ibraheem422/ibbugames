@@ -179,6 +179,555 @@
             width: 100%;
         }
 
+        #resetRequestPanel {
+            display: none;
+            width: 100%;
+        }
+
+        /* Shared Form Inputs for Login and Register fields */
+        input {
+            font-size: 16px;
+            padding: 10px 14px;
+            border-radius: 6px;
+            background-color: var(--select-bg);
+            color: var(--select-text);
+            border: 2px solid var(--select-border);
+            outline: none;
+            width: 100%;
+            box-sizing: border-box;
+            transition: all 0.2s;
+            margin-bottom: 12px;
+        }
+        input::placeholder {
+            color: var(--label-color);
+            opacity: 0.6;
+        }
+        input:focus {
+            border-color: #FFD700;
+        }
+
+        .form-label {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 6px;
+            color: var(--label-color);
+            text-align: left;
+            width: 100%;
+        }
+
+        /* Styling for Auth tabs (Log In / Sign Up toggles) */
+        .auth-tabs {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+        .auth-tab {
+            flex: 1;
+            font-size: 14px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            background-color: transparent;
+            color: var(--label-color);
+            border: 1.5px solid var(--border-color);
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: none;
+            transition: all 0.2s;
+        }
+        .auth-tab:hover {
+            border-color: #FFD700;
+            color: var(--text-color);
+            transform: none;
+            box-shadow: none;
+        }
+        .auth-tab.active {
+            background-color: #4a55a2;
+            color: white;
+            border-color: #4a55a2;
+        }
+
+        .auth-message {
+            font-size: 13px;
+            color: #d9534f;
+            margin-bottom: 12px;
+            font-weight: bold;
+            display: none;
+            width: 100%;
+            text-align: center;
+        }
+        .auth-message.success {
+            color: #5cb85c;
+        }
+
+        .profile-badge {
+            font-size: 14px;
+            font-weight: bold;
+            color: #FFD700;
+            background-color: rgba(255, 215, 0, 0.1);
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            width: 100%;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        select {
+            font-size: 16px;
+            padding: 10px 14px;
+            border-radius: 6px;
+            background-color: var(--select-bg);
+            color: var(--select-text);
+            border: 2px solid var(--select-border);
+            cursor: pointer;
+            outline: none;
+            width: 100%;
+            box-sizing: border-box;
+            transition: all 0.2s;
+        }
+        select:focus {
+            border-color: #FFD700;
+        }
+
+        /* Buttons that pop */
+        button {
+            font-size: 18px;
+            padding: 12px 24px;
+            border-radius: 6px;
+            background-color: #FFD700;
+            color: #111424;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 10px rgba(255, 215, 0, 0.2);
+            width: 100%;
+            box-sizing: border-box;
+        }
+        button:hover {
+            background-color: #FFA500;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(255, 165, 0, 0.4);
+        }
+        button:active {
+            transform: translateY(1px);
+        }
+
+        /* Style variation for secondary buttons */
+        .secondary-btn {
+            background-color: #4a55a2;
+            color: white;
+            box-shadow: 0 4px 10px rgba(74, 85, 162, 0.2);
+        }
+        .secondary-btn:hover {
+            background-color: #3b4380;
+            box-shadow: 0 6px 15px rgba(74, 85, 162, 0.4);
+        }
+
+        /* Admin Notifications Styling */
+        .admin-badge {
+            background-color: #FF6B6B;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-left: 8px;
+            font-weight: bold;
+        }
+
+        .notification-item {
+            background-color: rgba(255, 107, 107, 0.1);
+            border-left: 4px solid #FF6B6B;
+            padding: 12px;
+            margin-bottom: 12px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 107, 107, 0.3);
+        }
+
+        .notification-item h3 {
+            margin: 0 0 8px 0;
+            color: #FFD700;
+            font-size: 16px;
+        }
+
+        .notification-item p {
+            margin: 0 0 10px 0;
+            color: var(--text-color);
+            font-size: 14px;
+        }
+
+        .notification-actions {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .notification-actions button {
+            flex: 1;
+            font-size: 14px;
+            padding: 8px 12px;
+            margin: 0;
+        }
+
+        .accept-btn {
+            background-color: #5cb85c;
+        }
+        .accept-btn:hover {
+            background-color: #4cae4c;
+        }
+
+        .decline-btn {
+            background-color: #d9534f;
+        }
+        .decline-btn:hover {
+            background-color: #c9302c;
+        }
+
+        .no-notifications {
+            text-align: center;
+            color: #b3b9df;
+            padding: 20px;
+            font-size: 16px;
+        }
+
+        /* Game interface layouts */
+        #stats {
+            font-size: 18px;
+            margin-bottom: 15px;
+            display: none;
+            width: 100%;
+            justify-content: center;
+            gap: 10px;
+        }
+        .stat-box {
+            background-color: var(--panel-bg);
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 2px solid var(--border-color);
+            font-weight: bold;
+            min-width: 90px;
+            color: var(--text-color);
+            transition: background-color 0.3s, border-color 0.3s;
+            box-sizing: border-box;
+        }
+
+        canvas {
+            background-color: var(--panel-bg);
+            border: 4px solid var(--border-color);
+            border-radius: 12px;
+            cursor: pointer;
+            display: none;
+            margin: 0 auto;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            max-width: 100%;
+            height: auto;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+
+        /* Controls design */
+        #controls {
+            display: none;
+            margin-top: 15px;
+            width: 100%;
+            max-width: 500px;
+        }
+        .control-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .control-btn {
+            font-size: 14px;
+            padding: 10px 15px;
+            background-color: #4a55a2;
+            color: white;
+            border-radius: 6px;
+            box-shadow: none;
+            width: 100%;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .control-btn:hover {
+            background-color: #3b4380;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        #endGameBtn {
+            background-color: #d9534f;
+            color: white;
+            grid-column: span 2;
+            font-size: 16px;
+            padding: 12px;
+        }
+        #endGameBtn:hover {
+            background-color: #c9302c;
+        }
+
+        .menu-stat {
+            font-size: 16px;
+            color: #FFD700;
+            font-weight: bold;
+            background-color: rgba(255, 255, 255, 0.05);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            width: 100%;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        [data-theme="light"] .menu-stat {
+            background-color: rgba(74, 85, 162, 0.05);
+            border: 1px solid rgba(74, 85, 162, 0.2);
+            color: #4a55a2;
+        }
+
+        /* Notification badge animation */
+        @keyframes badgePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+        }
+
+        .admin-badge.new-notification {
+            animation: badgePulse 0.6s ease-in-out infinite;
+            background-color: #FF6B6B;
+        }
+
+        /* --- CUSTOM MODALS (replace native browser confirm/alert) --- */
+        #confirmModalOverlay, #infoModalOverlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #confirmModalOverlay.active, #infoModalOverlay.active {
+            display: flex;
+        }
+
+        #confirmModalBox, #infoModalBox {
+            background-color: var(--panel-bg);
+            border: 3px solid var(--border-color);
+            border-radius: 12px;
+            padding: 25px;
+            max-width: 340px;
+            width: 90%;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            text-align: center;
+            animation: modalPop 0.2s ease-out;
+        }
+
+        @keyframes modalPop {
+            0% { transform: scale(0.9); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        #confirmModalTitle {
+            margin: 0 0 12px 0;
+            color: #FFD700;
+            font-size: 20px;
+        }
+
+        #confirmModalMessage, #infoModalMessage {
+            margin: 0 0 20px 0;
+            color: var(--text-color);
+            font-size: 15px;
+            line-height: 1.5;
+            white-space: pre-line;
+        }
+
+        #confirmModalActions {
+            display: flex;
+            gap: 10px;
+        }
+
+        #confirmModalActions button {
+            flex: 1;
+            font-size: 15px;
+            padding: 10px;
+            margin: 0;
+        }
+
+        /* --- SYNC LOADING INDICATOR --- */
+        #syncIndicator {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--label-color);
+            margin: -5px 0 10px 0;
+            opacity: 0.85;
+        }
+
+        #syncIndicator.active {
+            display: flex;
+        }
+
+        .sync-spinner {
+            width: 14px;
+            height: 14px;
+            border: 2px solid var(--border-color);
+            border-top-color: #FFD700;
+            border-radius: 50%;
+            animation: syncSpin 0.8s linear infinite;
+        }
+
+        @keyframes syncSpin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="wrapper">
+        <!-- Logo Section with Smart Fallback -->
+        <div class="logo-container">
+            <img id="logoImg" src="logo.png" alt="Game Logo" class="site-logo" onerror="handleLogoError()">
+        </div>
+
+        <h1>Star Collector</h1>
+
+        <div id="syncIndicator">
+            <div class="sync-spinner"></div>
+            <span>Syncing...</span>
+        </div>
+
+        <div id="menu">
+            <!-- ==================== LOGIN / REGISTRATION SYSTEM ==================== -->
+            <div id="loginPanel">
+                <div class="auth-tabs">
+                    <button id="authLoginTab" class="auth-tab active">Log In</button>
+                    <button id="authSignUpTab" class="auth-tab">Sign Up</button>
+                </div>
+
+                <div id="authMsg" class="auth-message"></div>
+
+                <form id="authForm" onsubmit="event.preventDefault();">
+                    <div id="signupNameField" class="menu-element" style="align-items: flex-start; margin: 0 0 10px 0; display: none;">
+                        <label class="form-label" for="authName">Full Name:</label>
+                        <input id="authName" type="text" placeholder="Your full name..." required>
+                    </div>
+
+                    <div class="menu-element" style="align-items: flex-start; margin: 0 0 10px 0;">
+                        <label class="form-label" for="authUsername">Email:</label>
+                        <input id="authUsername" type="text" placeholder="Enter your email..." required>
+                    </div>
+
+                    <div class="menu-element" style="align-items: flex-start; margin: 0 0 15px 0;">
+                        <label class="form-label" for="authPassword">Password:</label>
+                        <input id="authPassword" type="password" placeholder="🔑 Password" required>
+                    </div>
+
+                    <div class="menu-element" style="margin: 0 0 12px 0;">
+                        <a href="#" id="forgotPasswordLink" style="font-size: 13px; color: var(--label-color); text-decoration: underline; cursor: pointer;">Forgot your password?</a>
+                    </div>
+
+                    <div class="menu-element" style="margin: 10px 0;">
+                        <button id="authSubmitBtn" type="button">Log In</button>
+                    </div>
+
+                    <div class="menu-element" style="margin: 0;">
+                        <button id="guestPlayBtn" class="secondary-btn" type="button">🚀 Play as Guest</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- ==================== ADMIN NOTIFICATIONS PANEL ==================== -->
+            <div id="adminNotificationsPanel">
+                <h2 style="margin-top: 0; color: #FF6B6B; font-size: 24px; border-bottom: 2px solid var(--border-color); padding-bottom: 8px; margin-bottom: 20px;">👮 Admin Notifications</h2>
+                
+                <div class="menu-element" style="margin-bottom: 15px;">
+                    <button id="adminRefreshBtn" class="secondary-btn" style="background-color: #5cb85c; font-size: 14px; padding: 8px 12px;">🔄 Check for New Requests</button>
+                </div>
+
+                <div class="notification-actions" id="bulkActionsContainer" style="margin-bottom: 20px; display: none;">
+                    <but            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            box-sizing: border-box;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+
+        .menu-element {
+            margin: 15px 0;
+            display: flex;
+            justify-content: center;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+
+        /* Panel Views */
+        #loginPanel {
+            display: block;
+            width: 100%;
+        }
+
+        #mainMenuPanel {
+            display: none;
+            width: 100%;
+        }
+
+        #settingsPanel {
+            display: none;
+            width: 100%;
+        }
+
+        #adminNotificationsPanel {
+            display: none;
+            width: 100%;
+        }
+
+        #missedGamesPanel {
+            display: none;
+            width: 100%;
+        }
+
+        .missed-game-item {
+            background-color: rgba(255, 140, 66, 0.1);
+            border-left: 4px solid #FF8C42;
+            padding: 12px;
+            margin-bottom: 12px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 140, 66, 0.3);
+            text-align: left;
+        }
+
+        .missed-game-item h3 {
+            margin: 0 0 8px 0;
+            color: #FF8C42;
+            font-size: 16px;
+        }
+
+        .missed-game-item p {
+            margin: 0 0 6px 0;
+            color: var(--text-color);
+            font-size: 14px;
+        }
+
+        #guestWaitingPanel {
+            display: none;
+            width: 100%;
+            text-align: center;
+        }
+
+        #guestNamePanel {
+            display: none;
+            width: 100%;
+        }
+
         /* Shared Form Inputs for Login and Register fields */
         input {
             font-size: 16px;
