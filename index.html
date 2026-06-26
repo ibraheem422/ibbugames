@@ -540,6 +540,7 @@
             color: var(--text-color);
             font-size: 15px;
             line-height: 1.5;
+            white-space: pre-line;
         }
 
         #confirmModalActions {
@@ -553,6 +554,36 @@
             padding: 10px;
             margin: 0;
         }
+
+        /* --- SYNC LOADING INDICATOR --- */
+        #syncIndicator {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--label-color);
+            margin: -5px 0 10px 0;
+            opacity: 0.85;
+        }
+
+        #syncIndicator.active {
+            display: flex;
+        }
+
+        .sync-spinner {
+            width: 14px;
+            height: 14px;
+            border: 2px solid var(--border-color);
+            border-top-color: #FFD700;
+            border-radius: 50%;
+            animation: syncSpin 0.8s linear infinite;
+        }
+
+        @keyframes syncSpin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -564,6 +595,11 @@
         </div>
 
         <h1>Star Collector</h1>
+
+        <div id="syncIndicator">
+            <div class="sync-spinner"></div>
+            <span>Syncing...</span>
+        </div>
 
         <div id="menu">
             <!-- ==================== LOGIN / REGISTRATION SYSTEM ==================== -->
@@ -591,6 +627,10 @@
                         <input id="authPassword" type="password" placeholder="🔑 Password" required>
                     </div>
 
+                    <div class="menu-element" style="margin: 0 0 12px 0;">
+                        <a href="#" id="forgotPasswordLink" style="font-size: 13px; color: var(--label-color); text-decoration: underline; cursor: pointer;">Forgot your password?</a>
+                    </div>
+
                     <div class="menu-element" style="margin: 10px 0;">
                         <button id="authSubmitBtn" type="button">Log In</button>
                     </div>
@@ -605,6 +645,15 @@
             <div id="adminNotificationsPanel">
                 <h2 style="margin-top: 0; color: #FF6B6B; font-size: 24px; border-bottom: 2px solid var(--border-color); padding-bottom: 8px; margin-bottom: 20px;">👮 Admin Notifications</h2>
                 
+                <div class="menu-element" style="margin-bottom: 15px;">
+                    <button id="adminRefreshBtn" class="secondary-btn" style="background-color: #5cb85c; font-size: 14px; padding: 8px 12px;">🔄 Check for New Requests</button>
+                </div>
+
+                <div class="notification-actions" id="bulkActionsContainer" style="margin-bottom: 20px; display: none;">
+                    <button class="accept-btn" id="approveAllBtn">✅ Approve All</button>
+                    <button class="decline-btn" id="declineAllBtn">❌ Decline All</button>
+                </div>
+
                 <div id="notificationsList"></div>
                 
                 <div class="menu-element" style="margin-top: 20px;">
@@ -645,9 +694,6 @@
                 </div>
                 <div class="menu-element" id="adminNotificationsBtnContainer" style="display: none;">
                     <button id="adminNotificationsBtn" class="secondary-btn">👮 Admin Notifications <span id="notificationCount" class="admin-badge">0</span></button>
-                </div>
-                <div class="menu-element" id="adminRefreshBtnContainer" style="display: none;">
-                    <button id="adminRefreshBtn" class="secondary-btn" style="background-color: #5cb85c; font-size: 14px; padding: 8px 12px;">🔄 Check for New Requests</button>
                 </div>
                 <div class="menu-element">
                     <button id="startBtn">Start Game</button>
@@ -825,6 +871,7 @@
         const authPasswordInput = document.getElementById("authPassword");
         const authSubmitBtn = document.getElementById("authSubmitBtn");
         const guestPlayBtn = document.getElementById("guestPlayBtn");
+        const forgotPasswordLink = document.getElementById("forgotPasswordLink");
         const logoutBtn = document.getElementById("logoutBtn");
         const activePilotSpan = document.getElementById("activePilot");
         const authMsg = document.getElementById("authMsg");
@@ -833,7 +880,9 @@
         const adminNotificationsBtnContainer = document.getElementById("adminNotificationsBtnContainer");
         const adminNotificationsBtn = document.getElementById("adminNotificationsBtn");
         const adminRefreshBtn = document.getElementById("adminRefreshBtn");
-        const adminRefreshBtnContainer = document.getElementById("adminRefreshBtnContainer");
+        const bulkActionsContainer = document.getElementById("bulkActionsContainer");
+        const approveAllBtn = document.getElementById("approveAllBtn");
+        const declineAllBtn = document.getElementById("declineAllBtn");
         const notificationsList = document.getElementById("notificationsList");
         const notificationCount = document.getElementById("notificationCount");
 
@@ -934,6 +983,24 @@
         }
 
         // --- CUSTOM IN-APP MODALS (replace native browser confirm()/alert()) ---
+        // --- SYNC LOADING INDICATOR ---
+        const syncIndicator = document.getElementById("syncIndicator");
+        let activeSyncCount = 0;
+
+        // Reference-counted so the indicator stays visible if multiple cloud
+        // calls overlap, and only hides once ALL of them have finished.
+        function showSyncIndicator() {
+            activeSyncCount++;
+            syncIndicator.classList.add("active");
+        }
+
+        function hideSyncIndicator() {
+            activeSyncCount = Math.max(0, activeSyncCount - 1);
+            if (activeSyncCount === 0) {
+                syncIndicator.classList.remove("active");
+            }
+        }
+
         const confirmModalOverlay = document.getElementById("confirmModalOverlay");
         const confirmModalTitle = document.getElementById("confirmModalTitle");
         const confirmModalMessage = document.getElementById("confirmModalMessage");
@@ -1041,8 +1108,9 @@
             }
         }
 
-        // Sync data from cloud to cache
-        async function syncCloudData() {
+        // Sync data from cloud to cache. Pass silent=true for background polling
+        // (e.g. the 2-second admin notification check) to avoid a flickering indicator.
+        async function syncCloudData(silent = false) {
             if (!cloudEnabled || !BIN_ID) return;
             
             try {
@@ -1050,6 +1118,7 @@
                 if (now - lastCloudSync < SYNC_INTERVAL) return;
                 lastCloudSync = now;
                 
+                if (!silent) showSyncIndicator();
                 const response = await fetch(`${JSONBIN_API_URL}/b/${BIN_ID}/latest`, {
                     headers: {
                         "X-Master-Key": JSONBIN_API_KEY
@@ -1066,6 +1135,8 @@
                 }
             } catch (e) {
                 console.warn("[JSONBin] Sync failed:", e.message);
+            } finally {
+                if (!silent) hideSyncIndicator();
             }
             return false;
         }
@@ -1079,6 +1150,7 @@
                 localStorage.setItem(key, JSON.stringify(newValue));
                 return false;
             }
+            showSyncIndicator();
             try {
                 const response = await fetch(`${JSONBIN_API_URL}/b/${BIN_ID}/latest`, {
                     headers: { "X-Master-Key": JSONBIN_API_KEY }
@@ -1108,6 +1180,8 @@
                 console.warn("[JSONBin] Safe update failed, saving locally only:", e.message);
                 localStorage.setItem(key, JSON.stringify(newValue));
                 return false;
+            } finally {
+                hideSyncIndicator();
             }
         }
 
@@ -1115,6 +1189,7 @@
         // to avoid acting on stale/cached local data from a different device's earlier sync.
         async function getFreshPendingSignups() {
             if (cloudEnabled && BIN_ID) {
+                showSyncIndicator();
                 try {
                     const response = await fetch(`${JSONBIN_API_URL}/b/${BIN_ID}/latest`, {
                         headers: { "X-Master-Key": JSONBIN_API_KEY }
@@ -1127,6 +1202,8 @@
                     }
                 } catch (e) {
                     console.warn("[JSONBin] Could not fetch fresh pending signups:", e.message);
+                } finally {
+                    hideSyncIndicator();
                 }
             }
             // Fallback to local cache
@@ -1265,8 +1342,9 @@
                 return;
             }
 
-            // Sync from cloud first (get latest data from JSONBin)
-            syncCloudData().then(() => {
+            // Sync from cloud first (get latest data from JSONBin) - silent so the
+            // sync indicator doesn't flicker on every 2-second background poll
+            syncCloudData(true).then(() => {
                 let pendingSignups = [];
                 const savedPending = storage.getItem("starCollectorPendingSignups");
                 if (savedPending) {
@@ -1496,6 +1574,13 @@
             guestNameInput.focus();
         });
 
+        // Forgot Password - since there's no automated reset flow, point the
+        // person to the admin who can manually look up or reset their account.
+        forgotPasswordLink.addEventListener("click", async (e) => {
+            e.preventDefault();
+            await showInfo(`🔑 Forgot your password?\n\nPlease contact the admin at ${SUPER_ADMIN_EMAIL} to have your password reset.`);
+        });
+
         // Guest Back Button (from name panel)
         guestBackBtn.addEventListener("click", () => {
             guestNamePanel.style.display = "none";
@@ -1556,7 +1641,8 @@
         async function checkGuestApprovalStatus(intervalId) {
             // Sync the latest cloud data first - this was the bug: it was only checking
             // the local cache, which never updated after the admin approved on another device.
-            await syncCloudData();
+            // Silent because this runs every 2 seconds while waiting.
+            await syncCloudData(true);
 
             let pendingSignups = [];
             const savedPending = storage.getItem("starCollectorPendingSignups");
@@ -1701,8 +1787,12 @@
 
             if (pendingSignups.length === 0) {
                 notificationsList.innerHTML = '<div class="no-notifications">✨ No pending requests to review!</div>';
+                bulkActionsContainer.style.display = "none";
                 return;
             }
+
+            // Only worth showing bulk actions when there's more than one request
+            bulkActionsContainer.style.display = pendingSignups.length > 1 ? "flex" : "none";
 
             notificationsList.innerHTML = '';
             pendingSignups.forEach((signup, index) => {
@@ -1855,6 +1945,76 @@
             }
         }
 
+        // Approve every pending request in one go (signups + guests), with a single
+        // confirmation up front rather than one popup per item.
+        async function approveAllSignups() {
+            let pendingSignups = await getFreshPendingSignups();
+            if (pendingSignups.length === 0) return;
+
+            const confirmed = await showConfirm(
+                "Approve all requests?",
+                `This will approve all ${pendingSignups.length} pending requests at once. Continue?`
+            );
+            if (!confirmed) return;
+
+            // Fetch fresh users/guests lists once, then apply all changes in memory
+            await syncCloudData();
+            let users = {};
+            const savedUsers = storage.getItem("starCollectorUsers");
+            if (savedUsers) {
+                try { users = JSON.parse(savedUsers); } catch (e) { users = {}; }
+            }
+            let approvedGuests = [];
+            const savedApproved = storage.getItem("starCollectorApprovedGuests");
+            if (savedApproved) {
+                try { approvedGuests = JSON.parse(savedApproved); } catch (e) { approvedGuests = []; }
+            }
+
+            for (const signup of pendingSignups) {
+                if (signup.type === "guest") {
+                    approvedGuests.push({
+                        sessionId: signup.sessionId,
+                        approvedAt: new Date().toLocaleString()
+                    });
+                } else {
+                    users[signup.username.toLowerCase()] = {
+                        originalName: signup.originalName,
+                        fullName: signup.fullName,
+                        password: signup.password,
+                        approvedDate: new Date().toLocaleString()
+                    };
+                }
+            }
+
+            // Write everything back in three cloud calls total, instead of one per item
+            await safeCloudUpdate("starCollectorUsers", users);
+            await safeCloudUpdate("starCollectorApprovedGuests", approvedGuests);
+            await safeCloudUpdate("starCollectorPendingSignups", []);
+
+            loadAdminNotifications();
+            await showInfo(`✅ All ${pendingSignups.length} requests have been approved!`);
+        }
+
+        // Decline every pending request in one go, with a single confirmation.
+        async function declineAllSignups() {
+            let pendingSignups = await getFreshPendingSignups();
+            if (pendingSignups.length === 0) return;
+
+            const confirmed = await showConfirm(
+                "Decline all requests?",
+                `This will decline all ${pendingSignups.length} pending requests at once. Continue?`
+            );
+            if (!confirmed) return;
+
+            await safeCloudUpdate("starCollectorPendingSignups", []);
+
+            loadAdminNotifications();
+            await showInfo(`🗑️ All ${pendingSignups.length} requests have been declined.`);
+        }
+
+        approveAllBtn.addEventListener("click", approveAllSignups);
+        declineAllBtn.addEventListener("click", declineAllSignups);
+
         adminNotificationsBtn.addEventListener("click", () => {
             mainMenuPanel.style.display = "none";
             adminNotificationsPanel.style.display = "block";
@@ -1886,7 +2046,6 @@
             // Show admin button only for super admin
             if (isAdmin) {
                 adminNotificationsBtnContainer.style.display = "block";
-                adminRefreshBtnContainer.style.display = "block";
                 
                 // Reset notification tracking
                 lastNotificationCount = 0;
@@ -1900,7 +2059,6 @@
                 startAdminNotificationPolling();
             } else {
                 adminNotificationsBtnContainer.style.display = "none";
-                adminRefreshBtnContainer.style.display = "none";
                 stopAdminNotificationPolling();
             }
 
