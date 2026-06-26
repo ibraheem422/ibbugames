@@ -493,6 +493,66 @@
             animation: badgePulse 0.6s ease-in-out infinite;
             background-color: #FF6B6B;
         }
+
+        /* --- CUSTOM MODALS (replace native browser confirm/alert) --- */
+        #confirmModalOverlay, #infoModalOverlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #confirmModalOverlay.active, #infoModalOverlay.active {
+            display: flex;
+        }
+
+        #confirmModalBox, #infoModalBox {
+            background-color: var(--panel-bg);
+            border: 3px solid var(--border-color);
+            border-radius: 12px;
+            padding: 25px;
+            max-width: 340px;
+            width: 90%;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            text-align: center;
+            animation: modalPop 0.2s ease-out;
+        }
+
+        @keyframes modalPop {
+            0% { transform: scale(0.9); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        #confirmModalTitle {
+            margin: 0 0 12px 0;
+            color: #FFD700;
+            font-size: 20px;
+        }
+
+        #confirmModalMessage, #infoModalMessage {
+            margin: 0 0 20px 0;
+            color: var(--text-color);
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        #confirmModalActions {
+            display: flex;
+            gap: 10px;
+        }
+
+        #confirmModalActions button {
+            flex: 1;
+            font-size: 15px;
+            padding: 10px;
+            margin: 0;
+        }
     </style>
 </head>
 <body>
@@ -522,8 +582,8 @@
                     </div>
 
                     <div class="menu-element" style="align-items: flex-start; margin: 0 0 10px 0;">
-                        <label class="form-label" for="authUsername">Username:</label>
-                        <input id="authUsername" type="text" placeholder="Astronaut name..." required>
+                        <label class="form-label" for="authUsername">Email:</label>
+                        <input id="authUsername" type="text" placeholder="Enter your email..." required>
                     </div>
 
                     <div class="menu-element" style="align-items: flex-start; margin: 0 0 15px 0;">
@@ -695,6 +755,28 @@
         </div>
     </div>
 
+    <!-- ==================== CUSTOM CONFIRMATION MODAL ==================== -->
+    <div id="confirmModalOverlay">
+        <div id="confirmModalBox">
+            <h3 id="confirmModalTitle">Are you sure?</h3>
+            <p id="confirmModalMessage">Please confirm this action.</p>
+            <div id="confirmModalActions">
+                <button id="confirmModalYes" class="accept-btn">✅ Yes</button>
+                <button id="confirmModalNo" class="decline-btn">❌ Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== CUSTOM INFO/ALERT MODAL ==================== -->
+    <div id="infoModalOverlay">
+        <div id="infoModalBox">
+            <p id="infoModalMessage"></p>
+            <div class="menu-element" style="margin-top: 10px;">
+                <button id="infoModalOkBtn">OK</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Global App Scripts -->
     <script>
         const canvas = document.getElementById("gameCanvas");
@@ -804,6 +886,55 @@
             } catch (e) {
                 console.warn("[URL] Could not update URL:", e.message);
             }
+        }
+
+        // --- CUSTOM IN-APP MODALS (replace native browser confirm()/alert()) ---
+        const confirmModalOverlay = document.getElementById("confirmModalOverlay");
+        const confirmModalTitle = document.getElementById("confirmModalTitle");
+        const confirmModalMessage = document.getElementById("confirmModalMessage");
+        const confirmModalYes = document.getElementById("confirmModalYes");
+        const confirmModalNo = document.getElementById("confirmModalNo");
+
+        const infoModalOverlay = document.getElementById("infoModalOverlay");
+        const infoModalMessage = document.getElementById("infoModalMessage");
+        const infoModalOkBtn = document.getElementById("infoModalOkBtn");
+
+        // Shows the app's own styled confirmation dialog. Returns a Promise<boolean>
+        // that resolves true if the person clicks "Yes", false if "Cancel".
+        function showConfirm(title, message) {
+            return new Promise((resolve) => {
+                confirmModalTitle.textContent = title;
+                confirmModalMessage.textContent = message;
+                confirmModalOverlay.classList.add("active");
+
+                function cleanup(result) {
+                    confirmModalOverlay.classList.remove("active");
+                    confirmModalYes.removeEventListener("click", onYes);
+                    confirmModalNo.removeEventListener("click", onNo);
+                    resolve(result);
+                }
+                function onYes() { cleanup(true); }
+                function onNo() { cleanup(false); }
+
+                confirmModalYes.addEventListener("click", onYes);
+                confirmModalNo.addEventListener("click", onNo);
+            });
+        }
+
+        // Shows the app's own styled info dialog, replacing alert(). Returns a Promise
+        // that resolves once the person clicks "OK".
+        function showInfo(message) {
+            return new Promise((resolve) => {
+                infoModalMessage.textContent = message;
+                infoModalOverlay.classList.add("active");
+
+                function onOk() {
+                    infoModalOverlay.classList.remove("active");
+                    infoModalOkBtn.removeEventListener("click", onOk);
+                    resolve();
+                }
+                infoModalOkBtn.addEventListener("click", onOk);
+            });
         }
 
         // --- HYBRID CLOUD + LOCAL STORAGE ENGINE ---
@@ -1332,12 +1463,12 @@
             const guestName = guestNameInput.value.trim();
 
             if (!guestName) {
-                alert("Please enter your name before sending request.");
+                await showInfo("Please enter your name before sending request.");
                 return;
             }
 
             if (guestName.length < 2) {
-                alert("Name must be at least 2 characters.");
+                await showInfo("Name must be at least 2 characters.");
                 return;
             }
 
@@ -1435,8 +1566,8 @@
                 }
                 
                 guestApprovalStatus.textContent = "❌ DECLINED";
-                setTimeout(() => {
-                    alert("❌ Your guest play request was declined by admin.");
+                setTimeout(async () => {
+                    await showInfo("❌ Your guest play request was declined by admin.");
                     guestWaitingPanel.style.display = "none";
                     loginPanel.style.display = "block";
                     currentGuestSessionId = null;
@@ -1454,7 +1585,13 @@
         });
 
         // Guest Cancel Button
-        guestCancelBtn.addEventListener("click", () => {
+        guestCancelBtn.addEventListener("click", async () => {
+            const confirmed = await showConfirm(
+                "Cancel your request?",
+                "Are you sure you want to cancel your guest play request?"
+            );
+            if (!confirmed) return;
+
             if (window.guestCheckInterval) {
                 clearInterval(window.guestCheckInterval);
             }
@@ -1478,9 +1615,15 @@
             loginPanel.style.display = "block";
             currentGuestSessionId = null;
             guestNameInput.value = "";
-            alert("❌ Guest request cancelled.");
+            await showInfo("❌ Guest request cancelled.");
         });
-        logoutBtn.addEventListener("click", () => {
+        logoutBtn.addEventListener("click", async () => {
+            const confirmed = await showConfirm(
+                "Log out?",
+                "Are you sure you want to log out?"
+            );
+            if (!confirmed) return;
+
             currentPilot = "";
             isGuest = false;
             isAdmin = false;
@@ -1530,7 +1673,7 @@
                 
                 notificationDiv.innerHTML = `
                     <h3>${icon} ${typeLabel}</h3>
-                    ${!isGuest ? `<p><strong>Username:</strong> ${signup.username}</p>` : ''}
+                    ${!isGuest ? `<p><strong>Email:</strong> ${signup.username}</p>` : ''}
                     ${detailsHTML}
                     <p><strong>Requested:</strong> ${signup.timestamp}</p>
                 `;
@@ -1554,6 +1697,16 @@
 
             if (index >= 0 && index < pendingSignups.length) {
                 const signup = pendingSignups[index];
+                const isGuestRequest = signup.type === "guest";
+                const nameForPrompt = signup.fullName || signup.username;
+
+                const confirmed = await showConfirm(
+                    "Approve this request?",
+                    isGuestRequest
+                        ? `Approve guest play access for "${nameForPrompt}"?`
+                        : `Approve the account signup for "${nameForPrompt}"?`
+                );
+                if (!confirmed) return;
                 
                 // Handle guest play approval differently
                 if (signup.type === "guest") {
@@ -1583,7 +1736,7 @@
 
                     // Reload notifications
                     loadAdminNotifications();
-                    alert(`✅ Guest play request APPROVED!`);
+                    await showInfo(`✅ Guest play request APPROVED!`);
                     return;
                 }
                 
@@ -1621,7 +1774,7 @@
 
                 // Reload notifications
                 loadAdminNotifications();
-                alert(`✅ Account for "${signup.fullName}" has been APPROVED! They can now login.`);
+                await showInfo(`✅ Account for "${signup.fullName}" has been APPROVED! They can now login.`);
             }
         }
 
@@ -1631,6 +1784,15 @@
             if (index >= 0 && index < pendingSignups.length) {
                 const signup = pendingSignups[index];
                 const isGuest = signup.type === "guest";
+                const nameForPrompt = signup.fullName || signup.username;
+
+                const confirmed = await showConfirm(
+                    "Decline this request?",
+                    isGuest
+                        ? `Decline guest play access for "${nameForPrompt}"?`
+                        : `Decline the account signup for "${nameForPrompt}"?`
+                );
+                if (!confirmed) return;
                 
                 // Remove from pending and write immediately and safely
                 pendingSignups.splice(index, 1);
@@ -1640,9 +1802,9 @@
                 loadAdminNotifications();
                 
                 if (isGuest) {
-                    alert(`🗑️ Guest play record removed!`);
+                    await showInfo(`🗑️ Guest play record removed!`);
                 } else {
-                    alert(`❌ Account request from "${signup.fullName}" has been declined!`);
+                    await showInfo(`❌ Account request from "${signup.fullName}" has been declined!`);
                 }
             }
         }
@@ -1661,10 +1823,10 @@
         });
 
         // Admin Refresh Button
-        adminRefreshBtn.addEventListener("click", () => {
+        adminRefreshBtn.addEventListener("click", async () => {
             console.log("[Admin] Manual refresh clicked");
             checkAndUpdateNotifications();
-            alert("✅ Checked for new requests!");
+            await showInfo("✅ Checked for new requests!");
         });
 
         // Function to load the Dashboard once authorized
@@ -1782,7 +1944,13 @@
             });
         }
 
-        function removeMissedGame(index) {
+        async function removeMissedGame(index) {
+            const confirmed = await showConfirm(
+                "Remove this entry?",
+                "This missed game record will be permanently deleted. Continue?"
+            );
+            if (!confirmed) return;
+
             let missedGames = getMissedGames();
             if (index >= 0 && index < missedGames.length) {
                 missedGames.splice(index, 1);
@@ -1793,7 +1961,7 @@
 
         // Resume a missed game exactly where it was left off: restores score, level,
         // elapsed time, and difficulty, then jumps straight into active gameplay.
-        function resumeMissedGame(index) {
+        async function resumeMissedGame(index) {
             let missedGames = getMissedGames();
             if (index < 0 || index >= missedGames.length) return;
 
@@ -1854,7 +2022,7 @@
             gameActive = true;
             updateGame();
 
-            alert(`▶️ Resumed! Score: ${score}, Level: ${level}`);
+            await showInfo(`▶️ Resumed! Score: ${score}, Level: ${level}`);
         }
 
         missedGamesBtn.addEventListener("click", () => {
@@ -1871,7 +2039,13 @@
         });
 
         // Save & Exit Button - saves current progress to Missed Games, then exits cleanly
-        saveExitBtn.addEventListener("click", function() {
+        saveExitBtn.addEventListener("click", async function() {
+            const confirmed = await showConfirm(
+                "Save & exit?",
+                `Save your progress (Score: ${score}, Level: ${level}) and return to the main menu?`
+            );
+            if (!confirmed) return;
+
             // Record this session as a missed game (with full state needed to resume later)
             saveMissedGame({
                 score: score,
@@ -1897,7 +2071,7 @@
             mainMenuPanel.style.display = "block";
             updateURL("Home-Page");
 
-            alert("💾 Progress saved! You can see it under Missed Games.");
+            await showInfo("💾 Progress saved! You can see it under Missed Games.");
         });
 
         // --- THEME ENGINE LOADING ---
