@@ -874,12 +874,57 @@
         let gameSeconds = 0;
         let timerInterval = null;
 
+        // --- SESSION PERSISTENCE ---
+        // Saves who is currently logged in to localStorage, so a page reload can restore
+        // the session instead of bouncing back to the login screen.
+        const SESSION_KEY = "starCollectorSession";
+
+        function saveSession() {
+            if (!currentPilot) {
+                clearSession();
+                return;
+            }
+            try {
+                localStorage.setItem(SESSION_KEY, JSON.stringify({
+                    currentPilot: currentPilot,
+                    isGuest: isGuest,
+                    isAdmin: isAdmin,
+                    currentGuestSessionId: currentGuestSessionId
+                }));
+            } catch (e) {
+                console.warn("[Session] Could not save session:", e.message);
+            }
+        }
+
+        function loadSession() {
+            try {
+                const saved = localStorage.getItem(SESSION_KEY);
+                if (saved) {
+                    return JSON.parse(saved);
+                }
+            } catch (e) {
+                console.warn("[Session] Could not load session:", e.message);
+            }
+            return null;
+        }
+
+        function clearSession() {
+            try {
+                localStorage.removeItem(SESSION_KEY);
+            } catch (e) {
+                console.warn("[Session] Could not clear session:", e.message);
+            }
+        }
+
         // --- URL PATH SYNC ---
         // Updates the browser's address bar to reflect the current screen, without reloading the page.
         // Uses History API (pushState) so back/forward and bookmarking feel natural.
         function updateURL(path) {
             try {
-                const newUrl = `${window.location.origin}${window.location.pathname}#${path}`;
+                // Uses a clean path (no #) via the History API. This does NOT trigger a
+                // real page navigation or reload - Vercel keeps serving the same index.html,
+                // we're just changing what's displayed in the address bar.
+                const newUrl = `${window.location.origin}/${path}`;
                 if (window.location.href !== newUrl) {
                     window.history.pushState({ path: path }, "", newUrl);
                 }
@@ -1628,6 +1673,7 @@
             isGuest = false;
             isAdmin = false;
             lastNotificationCount = 0;
+            clearSession();
             
             // Stop notification polling
             stopAdminNotificationPolling();
@@ -1835,6 +1881,7 @@
             mainMenuPanel.style.display = "block";
             activePilotSpan.textContent = currentPilot;
             updateURL("Home-Page");
+            saveSession();
 
             // Show admin button only for super admin
             if (isAdmin) {
@@ -2079,8 +2126,75 @@
         document.documentElement.setAttribute("data-theme", savedTheme);
         themeModeSelect.value = savedTheme;
 
-        // Set the initial URL path to reflect the starting screen (login page)
-        updateURL("Login");
+        // Restore session on page load (so refreshing doesn't sign the person out).
+        // Falls back to the login screen if no saved session exists or it's no longer valid.
+        (async function restoreSessionOnLoad() {
+            const saved = loadSession();
+
+            if (!saved || !saved.currentPilot) {
+                updateURL("Login");
+                return;
+            }
+
+            // Re-validate the saved session is still legitimate before restoring it
+            if (saved.isAdmin) {
+                currentPilot = saved.currentPilot;
+                isGuest = false;
+                isAdmin = true;
+                enterMainDashboard();
+                return;
+            }
+
+            if (saved.isGuest) {
+                // Confirm this guest session is still in the approved list
+                await syncCloudData();
+                let approvedGuests = [];
+                const savedApproved = storage.getItem("starCollectorApprovedGuests");
+                if (savedApproved) {
+                    try {
+                        approvedGuests = JSON.parse(savedApproved);
+                    } catch (e) {
+                        approvedGuests = [];
+                    }
+                }
+                const stillApproved = approvedGuests.find(g => g.sessionId === saved.currentGuestSessionId);
+                if (stillApproved) {
+                    currentPilot = saved.currentPilot;
+                    isGuest = true;
+                    isAdmin = false;
+                    currentGuestSessionId = saved.currentGuestSessionId;
+                    enterMainDashboard();
+                } else {
+                    clearSession();
+                    updateURL("Login");
+                }
+                return;
+            }
+
+            // Regular registered user - confirm the account still exists
+            await syncCloudData();
+            let users = {};
+            const savedUsers = storage.getItem("starCollectorUsers");
+            if (savedUsers) {
+                try {
+                    users = JSON.parse(savedUsers);
+                } catch (e) {
+                    users = {};
+                }
+            }
+            const lowerPilot = saved.currentPilot.toLowerCase();
+            const stillExists = Object.values(users).some(u => u.originalName && u.originalName.toLowerCase() === lowerPilot);
+
+            if (stillExists) {
+                currentPilot = saved.currentPilot;
+                isGuest = false;
+                isAdmin = false;
+                enterMainDashboard();
+            } else {
+                clearSession();
+                updateURL("Login");
+            }
+        })();
 
         // Watch for manual theme option updates
         themeModeSelect.addEventListener("change", function() {
@@ -2311,9 +2425,15 @@
             updateSpeedForLevel();
         });
 
-        endGameBtn.addEventListener("click", function() {
+        endGameBtn.addEventListener("click", async function() {
             // NOTE: End Game is a clean exit and intentionally does NOT save to Missed Games.
             // Use "Save & Exit" instead if the progress should be recorded.
+            const confirmed = await showConfirm(
+                "End game?",
+                `Your current progress (Score: ${score}, Level: ${level}) will NOT be saved. End game anyway?`
+            );
+            if (!confirmed) return;
+
             gameActive = false;
             cancelAnimationFrame(animationId);
             
