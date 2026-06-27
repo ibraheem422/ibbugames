@@ -655,550 +655,6 @@
                 </div>
 
                 <div class="notification-actions" id="bulkActionsContainer" style="margin-bottom: 20px; display: none;">
-                    <but            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-            box-sizing: border-box;
-            transition: background-color 0.3s, border-color 0.3s;
-        }
-
-        .menu-element {
-            margin: 15px 0;
-            display: flex;
-            justify-content: center;
-            flex-direction: column;
-            align-items: center;
-            width: 100%;
-        }
-
-        /* Panel Views */
-        #loginPanel {
-            display: block;
-            width: 100%;
-        }
-
-        #mainMenuPanel {
-            display: none;
-            width: 100%;
-        }
-
-        #settingsPanel {
-            display: none;
-            width: 100%;
-        }
-
-        #adminNotificationsPanel {
-            display: none;
-            width: 100%;
-        }
-
-        #missedGamesPanel {
-            display: none;
-            width: 100%;
-        }
-
-        .missed-game-item {
-            background-color: rgba(255, 140, 66, 0.1);
-            border-left: 4px solid #FF8C42;
-            padding: 12px;
-            margin-bottom: 12px;
-            border-radius: 6px;
-            border: 1px solid rgba(255, 140, 66, 0.3);
-            text-align: left;
-        }
-
-        .missed-game-item h3 {
-            margin: 0 0 8px 0;
-            color: #FF8C42;
-            font-size: 16px;
-        }
-
-        .missed-game-item p {
-            margin: 0 0 6px 0;
-            color: var(--text-color);
-            font-size: 14px;
-        }
-
-        #guestWaitingPanel {
-            display: none;
-            width: 100%;
-            text-align: center;
-        }
-
-        #guestNamePanel {
-            display: none;
-            width: 100%;
-        }
-
-        /* Shared Form Inputs for Login and Register fields */
-        input {
-            font-size: 16px;
-            padding: 10px 14px;
-            border-radius: 6px;
-            background-color: var(--select-bg);
-            color: var(--select-text);
-            border: 2px solid var(--select-border);
-            outline: none;
-            width: 100%;
-            box-sizing: border-box;
-            transition: all 0.2s;
-            margin-bottom: 12px;
-        }
-        input::placeholder {
-            color: var(--label-color);
-            opacity: 0.6;
-        }
-        input:focus {
-            border-color: #FFD700;
-        }
-
-        .form-label {
-            font-size: 14px;
-            font-weight: bold;
-            margin-bottom: 6px;
-            color: var(--label-color);
-            text-align: left;
-            width: 100%;
-        }
-
-        /* Styling for Auth tabs (Log In / Sign Up toggles) */
-        .auth-tabs {
-            display: flex;
-            gap: 10px;
-            width: 100%;
-            margin-bottom: 15px;
-        }
-        .auth-tab {
-            flex: 1;
-            font-size: 14px;
-            padding: 8px 12px;
-            border-radius: 6px;
-            background-color: transparent;
-            color: var(--label-color);
-            border: 1.5px solid var(--border-color);
-            cursor: pointer;
-            font-weight: bold;
-            box-shadow: none;
-            transition: all 0.2s;
-        }
-        .auth-tab:hover {
-            border-color: #FFD700;
-            color: var(--text-color);
-            transform: none;
-            box-shadow: none;
-        }
-        .auth-tab.active {
-            background-color: #4a55a2;
-            color: white;
-            border-color: #4a55a2;
-        }
-
-        .auth-message {
-            font-size: 13px;
-            color: #d9534f;
-            margin-bottom: 12px;
-            font-weight: bold;
-            display: none;
-            width: 100%;
-            text-align: center;
-        }
-        .auth-message.success {
-            color: #5cb85c;
-        }
-
-        .profile-badge {
-            font-size: 14px;
-            font-weight: bold;
-            color: #FFD700;
-            background-color: rgba(255, 215, 0, 0.1);
-            padding: 8px 12px;
-            border-radius: 8px;
-            border: 1px solid rgba(255, 215, 0, 0.2);
-            width: 100%;
-            box-sizing: border-box;
-            margin-bottom: 10px;
-            text-align: center;
-        }
-
-        select {
-            font-size: 16px;
-            padding: 10px 14px;
-            border-radius: 6px;
-            background-color: var(--select-bg);
-            color: var(--select-text);
-            border: 2px solid var(--select-border);
-            cursor: pointer;
-            outline: none;
-            width: 100%;
-            box-sizing: border-box;
-            transition: all 0.2s;
-        }
-        select:focus {
-            border-color: #FFD700;
-        }
-
-        /* Buttons that pop */
-        button {
-            font-size: 18px;
-            padding: 12px 24px;
-            border-radius: 6px;
-            background-color: #FFD700;
-            color: #111424;
-            border: none;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: 0 4px 10px rgba(255, 215, 0, 0.2);
-            width: 100%;
-            box-sizing: border-box;
-        }
-        button:hover {
-            background-color: #FFA500;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(255, 165, 0, 0.4);
-        }
-        button:active {
-            transform: translateY(1px);
-        }
-
-        /* Style variation for secondary buttons */
-        .secondary-btn {
-            background-color: #4a55a2;
-            color: white;
-            box-shadow: 0 4px 10px rgba(74, 85, 162, 0.2);
-        }
-        .secondary-btn:hover {
-            background-color: #3b4380;
-            box-shadow: 0 6px 15px rgba(74, 85, 162, 0.4);
-        }
-
-        /* Admin Notifications Styling */
-        .admin-badge {
-            background-color: #FF6B6B;
-            color: white;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            margin-left: 8px;
-            font-weight: bold;
-        }
-
-        .notification-item {
-            background-color: rgba(255, 107, 107, 0.1);
-            border-left: 4px solid #FF6B6B;
-            padding: 12px;
-            margin-bottom: 12px;
-            border-radius: 6px;
-            border: 1px solid rgba(255, 107, 107, 0.3);
-        }
-
-        .notification-item h3 {
-            margin: 0 0 8px 0;
-            color: #FFD700;
-            font-size: 16px;
-        }
-
-        .notification-item p {
-            margin: 0 0 10px 0;
-            color: var(--text-color);
-            font-size: 14px;
-        }
-
-        .notification-actions {
-            display: flex;
-            gap: 8px;
-            width: 100%;
-        }
-
-        .notification-actions button {
-            flex: 1;
-            font-size: 14px;
-            padding: 8px 12px;
-            margin: 0;
-        }
-
-        .accept-btn {
-            background-color: #5cb85c;
-        }
-        .accept-btn:hover {
-            background-color: #4cae4c;
-        }
-
-        .decline-btn {
-            background-color: #d9534f;
-        }
-        .decline-btn:hover {
-            background-color: #c9302c;
-        }
-
-        .no-notifications {
-            text-align: center;
-            color: #b3b9df;
-            padding: 20px;
-            font-size: 16px;
-        }
-
-        /* Game interface layouts */
-        #stats {
-            font-size: 18px;
-            margin-bottom: 15px;
-            display: none;
-            width: 100%;
-            justify-content: center;
-            gap: 10px;
-        }
-        .stat-box {
-            background-color: var(--panel-bg);
-            padding: 10px 15px;
-            border-radius: 8px;
-            border: 2px solid var(--border-color);
-            font-weight: bold;
-            min-width: 90px;
-            color: var(--text-color);
-            transition: background-color 0.3s, border-color 0.3s;
-            box-sizing: border-box;
-        }
-
-        canvas {
-            background-color: var(--panel-bg);
-            border: 4px solid var(--border-color);
-            border-radius: 12px;
-            cursor: pointer;
-            display: none;
-            margin: 0 auto;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-            max-width: 100%;
-            height: auto;
-            transition: background-color 0.3s, border-color 0.3s;
-        }
-
-        /* Controls design */
-        #controls {
-            display: none;
-            margin-top: 15px;
-            width: 100%;
-            max-width: 500px;
-        }
-        .control-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-        .control-btn {
-            font-size: 14px;
-            padding: 10px 15px;
-            background-color: #4a55a2;
-            color: white;
-            border-radius: 6px;
-            box-shadow: none;
-            width: 100%;
-            border: none;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        .control-btn:hover {
-            background-color: #3b4380;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
-        #endGameBtn {
-            background-color: #d9534f;
-            color: white;
-            grid-column: span 2;
-            font-size: 16px;
-            padding: 12px;
-        }
-        #endGameBtn:hover {
-            background-color: #c9302c;
-        }
-
-        .menu-stat {
-            font-size: 16px;
-            color: #FFD700;
-            font-weight: bold;
-            background-color: rgba(255, 255, 255, 0.05);
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            width: 100%;
-            box-sizing: border-box;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        [data-theme="light"] .menu-stat {
-            background-color: rgba(74, 85, 162, 0.05);
-            border: 1px solid rgba(74, 85, 162, 0.2);
-            color: #4a55a2;
-        }
-
-        /* Notification badge animation */
-        @keyframes badgePulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.15); }
-        }
-
-        .admin-badge.new-notification {
-            animation: badgePulse 0.6s ease-in-out infinite;
-            background-color: #FF6B6B;
-        }
-
-        /* --- CUSTOM MODALS (replace native browser confirm/alert) --- */
-        #confirmModalOverlay, #infoModalOverlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.6);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-        }
-
-        #confirmModalOverlay.active, #infoModalOverlay.active {
-            display: flex;
-        }
-
-        #confirmModalBox, #infoModalBox {
-            background-color: var(--panel-bg);
-            border: 3px solid var(--border-color);
-            border-radius: 12px;
-            padding: 25px;
-            max-width: 340px;
-            width: 90%;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-            text-align: center;
-            animation: modalPop 0.2s ease-out;
-        }
-
-        @keyframes modalPop {
-            0% { transform: scale(0.9); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-
-        #confirmModalTitle {
-            margin: 0 0 12px 0;
-            color: #FFD700;
-            font-size: 20px;
-        }
-
-        #confirmModalMessage, #infoModalMessage {
-            margin: 0 0 20px 0;
-            color: var(--text-color);
-            font-size: 15px;
-            line-height: 1.5;
-            white-space: pre-line;
-        }
-
-        #confirmModalActions {
-            display: flex;
-            gap: 10px;
-        }
-
-        #confirmModalActions button {
-            flex: 1;
-            font-size: 15px;
-            padding: 10px;
-            margin: 0;
-        }
-
-        /* --- SYNC LOADING INDICATOR --- */
-        #syncIndicator {
-            display: none;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            font-size: 13px;
-            color: var(--label-color);
-            margin: -5px 0 10px 0;
-            opacity: 0.85;
-        }
-
-        #syncIndicator.active {
-            display: flex;
-        }
-
-        .sync-spinner {
-            width: 14px;
-            height: 14px;
-            border: 2px solid var(--border-color);
-            border-top-color: #FFD700;
-            border-radius: 50%;
-            animation: syncSpin 0.8s linear infinite;
-        }
-
-        @keyframes syncSpin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
-</head>
-<body>
-
-    <div class="wrapper">
-        <!-- Logo Section with Smart Fallback -->
-        <div class="logo-container">
-            <img id="logoImg" src="logo.png" alt="Game Logo" class="site-logo" onerror="handleLogoError()">
-        </div>
-
-        <h1>Star Collector</h1>
-
-        <div id="syncIndicator">
-            <div class="sync-spinner"></div>
-            <span>Syncing...</span>
-        </div>
-
-        <div id="menu">
-            <!-- ==================== LOGIN / REGISTRATION SYSTEM ==================== -->
-            <div id="loginPanel">
-                <div class="auth-tabs">
-                    <button id="authLoginTab" class="auth-tab active">Log In</button>
-                    <button id="authSignUpTab" class="auth-tab">Sign Up</button>
-                </div>
-
-                <div id="authMsg" class="auth-message"></div>
-
-                <form id="authForm" onsubmit="event.preventDefault();">
-                    <div id="signupNameField" class="menu-element" style="align-items: flex-start; margin: 0 0 10px 0; display: none;">
-                        <label class="form-label" for="authName">Full Name:</label>
-                        <input id="authName" type="text" placeholder="Your full name..." required>
-                    </div>
-
-                    <div class="menu-element" style="align-items: flex-start; margin: 0 0 10px 0;">
-                        <label class="form-label" for="authUsername">Email:</label>
-                        <input id="authUsername" type="text" placeholder="Enter your email..." required>
-                    </div>
-
-                    <div class="menu-element" style="align-items: flex-start; margin: 0 0 15px 0;">
-                        <label class="form-label" for="authPassword">Password:</label>
-                        <input id="authPassword" type="password" placeholder="🔑 Password" required>
-                    </div>
-
-                    <div class="menu-element" style="margin: 0 0 12px 0;">
-                        <a href="#" id="forgotPasswordLink" style="font-size: 13px; color: var(--label-color); text-decoration: underline; cursor: pointer;">Forgot your password?</a>
-                    </div>
-
-                    <div class="menu-element" style="margin: 10px 0;">
-                        <button id="authSubmitBtn" type="button">Log In</button>
-                    </div>
-
-                    <div class="menu-element" style="margin: 0;">
-                        <button id="guestPlayBtn" class="secondary-btn" type="button">🚀 Play as Guest</button>
-                    </div>
-                </form>
-            </div>
-
-            <!-- ==================== ADMIN NOTIFICATIONS PANEL ==================== -->
-            <div id="adminNotificationsPanel">
-                <h2 style="margin-top: 0; color: #FF6B6B; font-size: 24px; border-bottom: 2px solid var(--border-color); padding-bottom: 8px; margin-bottom: 20px;">👮 Admin Notifications</h2>
-                
-                <div class="menu-element" style="margin-bottom: 15px;">
-                    <button id="adminRefreshBtn" class="secondary-btn" style="background-color: #5cb85c; font-size: 14px; padding: 8px 12px;">🔄 Check for New Requests</button>
-                </div>
-
-                <div class="notification-actions" id="bulkActionsContainer" style="margin-bottom: 20px; display: none;">
                     <button class="accept-btn" id="approveAllBtn">✅ Approve All</button>
                     <button class="decline-btn" id="declineAllBtn">❌ Decline All</button>
                 </div>
@@ -1276,6 +732,35 @@
 
                     <div class="menu-element" style="margin: 0;">
                         <button id="guestBackBtn" type="button" class="secondary-btn" style="background-color: #d9534f;">❌ Back to Login</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- ==================== PASSWORD RESET REQUEST PANEL ==================== -->
+            <div id="resetRequestPanel">
+                <h2 style="margin-top: 20px; color: #FFD700; font-size: 28px; margin-bottom: 20px;">🔑 Password Reset</h2>
+                
+                <div style="background-color: rgba(255, 215, 0, 0.1); border-left: 4px solid #FFD700; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
+                    <p style="font-size: 14px; color: var(--label-color); margin: 0;">Enter your account email and a short note. The admin will see this in their Admin Notifications and can reset your password.</p>
+                </div>
+
+                <form id="resetRequestForm" onsubmit="event.preventDefault();">
+                    <div class="menu-element" style="align-items: flex-start; margin: 0 0 15px 0;">
+                        <label class="form-label" for="resetEmailInput">Your Account Email:</label>
+                        <input id="resetEmailInput" type="text" placeholder="Enter the email on your account..." required>
+                    </div>
+
+                    <div class="menu-element" style="align-items: flex-start; margin: 0 0 20px 0;">
+                        <label class="form-label" for="resetMessageInput">Message (optional):</label>
+                        <input id="resetMessageInput" type="text" placeholder="e.g. I forgot my password...">
+                    </div>
+
+                    <div class="menu-element" style="margin: 10px 0;">
+                        <button id="resetRequestSendBtn" type="button" class="secondary-btn" style="background-color: #FFD700; color: #111424;">📤 Send Request to Admin</button>
+                    </div>
+
+                    <div class="menu-element" style="margin: 0;">
+                        <button id="resetRequestBackBtn" type="button" class="secondary-btn" style="background-color: #d9534f;">❌ Back to Login</button>
                     </div>
                 </form>
             </div>
@@ -1395,6 +880,11 @@
         const saveExitBtn = document.getElementById("saveExitBtn");
         const guestNamePanel = document.getElementById("guestNamePanel");
         const guestWaitingPanel = document.getElementById("guestWaitingPanel");
+        const resetRequestPanel = document.getElementById("resetRequestPanel");
+        const resetEmailInput = document.getElementById("resetEmailInput");
+        const resetMessageInput = document.getElementById("resetMessageInput");
+        const resetRequestSendBtn = document.getElementById("resetRequestSendBtn");
+        const resetRequestBackBtn = document.getElementById("resetRequestBackBtn");
         
         const startBtn = document.getElementById("startBtn");
         const settingsBtn = document.getElementById("settingsBtn");
@@ -2125,9 +1615,55 @@
 
         // Forgot Password - since there's no automated reset flow, point the
         // person to the admin who can manually look up or reset their account.
-        forgotPasswordLink.addEventListener("click", async (e) => {
+        forgotPasswordLink.addEventListener("click", (e) => {
             e.preventDefault();
-            await showInfo(`🔑 Forgot your password?\n\nPlease contact the admin at ${SUPER_ADMIN_EMAIL} to have your password reset.`);
+            loginPanel.style.display = "none";
+            resetRequestPanel.style.display = "block";
+            resetEmailInput.value = authUsernameInput.value.trim(); // pre-fill if they already typed an email
+            resetMessageInput.value = "";
+            resetEmailInput.focus();
+        });
+
+        resetRequestBackBtn.addEventListener("click", () => {
+            resetRequestPanel.style.display = "none";
+            loginPanel.style.display = "block";
+        });
+
+        resetRequestSendBtn.addEventListener("click", async () => {
+            const email = resetEmailInput.value.trim();
+            const message = resetMessageInput.value.trim();
+
+            if (!email) {
+                await showInfo("Please enter the email on your account.");
+                return;
+            }
+            if (!email.includes("@") || email.length < 5) {
+                await showInfo("Please enter a valid email address.");
+                return;
+            }
+
+            // Get freshest pending list to avoid acting on stale data, then add this
+            // as a special "reset" type entry that shows up in Admin Notifications.
+            let pendingSignups = await getFreshPendingSignups();
+
+            pendingSignups.push({
+                username: email,
+                fullName: email,
+                message: message || "(no message provided)",
+                timestamp: new Date().toLocaleString(),
+                type: "reset"
+            });
+
+            const success = await safeCloudUpdate("starCollectorPendingSignups", pendingSignups);
+
+            resetRequestPanel.style.display = "none";
+            loginPanel.style.display = "block";
+
+            if (success) {
+                await showInfo("✅ Your password reset request has been sent to the admin. They'll reach out to you soon.");
+            } else {
+                await showInfo("⚠️ Request saved, but there may have been a sync issue. If the admin doesn't follow up, please try again.");
+            }
         });
 
         // Guest Back Button (from name panel)
@@ -2341,18 +1877,24 @@
             }
 
             // Only worth showing bulk actions when there's more than one request
-            bulkActionsContainer.style.display = pendingSignups.length > 1 ? "flex" : "none";
+            // Only show bulk actions when there's more than one approvable/declinable
+            // request (reset requests don't count, since they need individual handling)
+            const bulkEligibleCount = pendingSignups.filter(s => s.type !== "reset").length;
+            bulkActionsContainer.style.display = bulkEligibleCount > 1 ? "flex" : "none";
 
             notificationsList.innerHTML = '';
             pendingSignups.forEach((signup, index) => {
                 const notificationDiv = document.createElement('div');
                 notificationDiv.className = 'notification-item';
                 const isGuest = signup.type === "guest";
-                const icon = isGuest ? "👤" : "🚀";
-                const typeLabel = isGuest ? "Guest Play Request" : "Account Signup";
+                const isReset = signup.type === "reset";
+                const icon = isReset ? "🔑" : (isGuest ? "👤" : "🚀");
+                const typeLabel = isReset ? "Password Reset Request" : (isGuest ? "Guest Play Request" : "Account Signup");
                 
                 let detailsHTML = '';
-                if (!isGuest) {
+                if (isReset) {
+                    detailsHTML = `<p><strong>Message:</strong> ${signup.message}</p>`;
+                } else if (!isGuest) {
                     detailsHTML = `<p><strong>Full Name:</strong> ${signup.fullName}</p>`;
                 }
                 
@@ -2363,13 +1905,20 @@
                     <p><strong>Requested:</strong> ${signup.timestamp}</p>
                 `;
                 
-                // Show action buttons for both signup and guest requests
+                // Reset requests just need a "Mark as Handled" action (there's no account
+                // to approve/decline - the admin resets the password manually, outside the app).
                 const actionsDiv = document.createElement('div');
                 actionsDiv.className = 'notification-actions';
-                actionsDiv.innerHTML = `
-                    <button class="accept-btn" onclick="approveSignup(${index})">✅ Accept</button>
-                    <button class="decline-btn" onclick="declineSignup(${index})">❌ Decline</button>
-                `;
+                if (isReset) {
+                    actionsDiv.innerHTML = `
+                        <button class="accept-btn" onclick="declineSignup(${index})">✅ Mark as Handled</button>
+                    `;
+                } else {
+                    actionsDiv.innerHTML = `
+                        <button class="accept-btn" onclick="approveSignup(${index})">✅ Accept</button>
+                        <button class="decline-btn" onclick="declineSignup(${index})">❌ Decline</button>
+                    `;
+                }
                 
                 notificationDiv.appendChild(actionsDiv);
                 notificationsList.appendChild(notificationDiv);
@@ -2469,13 +2018,16 @@
             if (index >= 0 && index < pendingSignups.length) {
                 const signup = pendingSignups[index];
                 const isGuest = signup.type === "guest";
+                const isReset = signup.type === "reset";
                 const nameForPrompt = signup.fullName || signup.username;
 
                 const confirmed = await showConfirm(
-                    "Decline this request?",
-                    isGuest
-                        ? `Decline guest play access for "${nameForPrompt}"?`
-                        : `Decline the account signup for "${nameForPrompt}"?`
+                    isReset ? "Mark as handled?" : "Decline this request?",
+                    isReset
+                        ? `Mark the password reset request for "${nameForPrompt}" as handled? Make sure you've reset their password before confirming.`
+                        : (isGuest
+                            ? `Decline guest play access for "${nameForPrompt}"?`
+                            : `Decline the account signup for "${nameForPrompt}"?`)
                 );
                 if (!confirmed) return;
                 
@@ -2486,7 +2038,9 @@
                 // Reload notifications
                 loadAdminNotifications();
                 
-                if (isGuest) {
+                if (isReset) {
+                    await showInfo(`✅ Password reset request for "${nameForPrompt}" marked as handled.`);
+                } else if (isGuest) {
                     await showInfo(`🗑️ Guest play record removed!`);
                 } else {
                     await showInfo(`❌ Account request from "${signup.fullName}" has been declined!`);
@@ -2500,9 +2054,19 @@
             let pendingSignups = await getFreshPendingSignups();
             if (pendingSignups.length === 0) return;
 
+            // Reset requests can't be "approved" like an account - they need the admin
+            // to manually change the password, so they're excluded from bulk approval.
+            const approvable = pendingSignups.filter(s => s.type !== "reset");
+            const resetEntries = pendingSignups.filter(s => s.type === "reset");
+
+            if (approvable.length === 0) {
+                await showInfo("Only password reset requests are pending - those need to be handled individually, not approved in bulk.");
+                return;
+            }
+
             const confirmed = await showConfirm(
                 "Approve all requests?",
-                `This will approve all ${pendingSignups.length} pending requests at once. Continue?`
+                `This will approve all ${approvable.length} pending signup/guest requests at once. Continue?`
             );
             if (!confirmed) return;
 
@@ -2519,7 +2083,7 @@
                 try { approvedGuests = JSON.parse(savedApproved); } catch (e) { approvedGuests = []; }
             }
 
-            for (const signup of pendingSignups) {
+            for (const signup of approvable) {
                 if (signup.type === "guest") {
                     approvedGuests.push({
                         sessionId: signup.sessionId,
@@ -2535,30 +2099,40 @@
                 }
             }
 
-            // Write everything back in three cloud calls total, instead of one per item
+            // Write everything back: users, guests, and the pending list keeps
+            // only the reset entries (which still need individual handling)
             await safeCloudUpdate("starCollectorUsers", users);
             await safeCloudUpdate("starCollectorApprovedGuests", approvedGuests);
-            await safeCloudUpdate("starCollectorPendingSignups", []);
+            await safeCloudUpdate("starCollectorPendingSignups", resetEntries);
 
             loadAdminNotifications();
-            await showInfo(`✅ All ${pendingSignups.length} requests have been approved!`);
+            await showInfo(`✅ All ${approvable.length} signup/guest requests have been approved!`);
         }
 
-        // Decline every pending request in one go, with a single confirmation.
+        // Decline every pending signup/guest request in one go (reset requests are
+        // excluded - they need to be individually marked as handled).
         async function declineAllSignups() {
             let pendingSignups = await getFreshPendingSignups();
             if (pendingSignups.length === 0) return;
 
+            const declinable = pendingSignups.filter(s => s.type !== "reset");
+            const resetEntries = pendingSignups.filter(s => s.type === "reset");
+
+            if (declinable.length === 0) {
+                await showInfo("Only password reset requests are pending - those need to be marked as handled individually.");
+                return;
+            }
+
             const confirmed = await showConfirm(
                 "Decline all requests?",
-                `This will decline all ${pendingSignups.length} pending requests at once. Continue?`
+                `This will decline all ${declinable.length} pending signup/guest requests at once. Continue?`
             );
             if (!confirmed) return;
 
-            await safeCloudUpdate("starCollectorPendingSignups", []);
+            await safeCloudUpdate("starCollectorPendingSignups", resetEntries);
 
             loadAdminNotifications();
-            await showInfo(`🗑️ All ${pendingSignups.length} requests have been declined.`);
+            await showInfo(`🗑️ All ${declinable.length} signup/guest requests have been declined.`);
         }
 
         approveAllBtn.addEventListener("click", approveAllSignups);
