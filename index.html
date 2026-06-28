@@ -488,6 +488,12 @@
             color: #4a55a2;
         }
 
+        #playTimeRemainingBadge.lb-time-warning {
+            color: #FF6B6B !important;
+            border-color: rgba(255, 107, 107, 0.4) !important;
+            background-color: rgba(255, 107, 107, 0.1) !important;
+        }
+
         /* Notification badge animation */
         @keyframes badgePulse {
             0%, 100% { transform: scale(1); }
@@ -500,7 +506,7 @@
         }
 
         /* --- CUSTOM MODALS (replace native browser confirm/alert) --- */
-        #confirmModalOverlay, #infoModalOverlay {
+        #confirmModalOverlay, #infoModalOverlay, #timeInputModalOverlay {
             display: none;
             position: fixed;
             top: 0;
@@ -513,11 +519,11 @@
             justify-content: center;
         }
 
-        #confirmModalOverlay.active, #infoModalOverlay.active {
+        #confirmModalOverlay.active, #infoModalOverlay.active, #timeInputModalOverlay.active {
             display: flex;
         }
 
-        #confirmModalBox, #infoModalBox {
+        #confirmModalBox, #infoModalBox, #timeInputModalBox {
             background-color: var(--panel-bg);
             border: 3px solid var(--border-color);
             border-radius: 12px;
@@ -534,13 +540,13 @@
             100% { transform: scale(1); opacity: 1; }
         }
 
-        #confirmModalTitle {
+        #confirmModalTitle, #timeInputModalTitle {
             margin: 0 0 12px 0;
             color: #FFD700;
             font-size: 20px;
         }
 
-        #confirmModalMessage, #infoModalMessage {
+        #confirmModalMessage, #infoModalMessage, #timeInputModalMessage {
             margin: 0 0 20px 0;
             color: var(--text-color);
             font-size: 15px;
@@ -548,12 +554,12 @@
             white-space: pre-line;
         }
 
-        #confirmModalActions {
+        #confirmModalActions, #timeInputModalActions {
             display: flex;
             gap: 10px;
         }
 
-        #confirmModalActions button {
+        #confirmModalActions button, #timeInputModalActions button {
             flex: 1;
             font-size: 15px;
             padding: 10px;
@@ -588,6 +594,163 @@
         @keyframes syncSpin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+        }
+
+        /* --- UNIVERSAL SEARCH --- */
+        #appSearchInput {
+            margin-bottom: 0;
+        }
+
+        #appSearchResults {
+            display: none;
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            right: 0;
+            background-color: var(--panel-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            z-index: 50;
+            max-height: 280px;
+            overflow-y: auto;
+            text-align: left;
+        }
+
+        #appSearchResults.active {
+            display: block;
+        }
+
+        .search-result-item {
+            padding: 10px 14px;
+            cursor: pointer;
+            font-size: 14px;
+            color: var(--text-color);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        [data-theme="light"] .search-result-item {
+            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+        }
+
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+
+        .search-result-item:hover {
+            background-color: rgba(255, 215, 0, 0.12);
+        }
+
+        .search-result-item .search-result-section {
+            font-size: 11px;
+            color: var(--label-color);
+            font-weight: bold;
+        }
+
+        .search-no-results {
+            padding: 14px;
+            text-align: center;
+            color: var(--label-color);
+            font-size: 14px;
+        }
+
+        /* --- LEADERBOARD --- */
+        #leaderboardPanel {
+            display: none;
+            width: 100%;
+        }
+
+        .leaderboard-header-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 0 6px 8px 6px;
+            border-bottom: 2px solid var(--border-color);
+            margin-bottom: 10px;
+            font-size: 12px;
+            font-weight: bold;
+            color: var(--label-color);
+            text-transform: uppercase;
+        }
+
+        .leaderboard-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 6px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            font-size: 14px;
+        }
+
+        [data-theme="light"] .leaderboard-row {
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+        }
+
+        .lb-col-name {
+            flex: 2;
+            text-align: left;
+            color: var(--text-color);
+            font-weight: bold;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .lb-col-score {
+            flex: 1;
+            text-align: center;
+            color: #FFD700;
+            font-weight: bold;
+        }
+
+        .lb-col-status {
+            flex: 2;
+            text-align: center;
+            font-size: 12px;
+        }
+
+        .lb-col-action {
+            flex: 0 0 36px;
+            text-align: center;
+        }
+
+        .lb-status-ok {
+            color: #5cb85c;
+            font-weight: bold;
+        }
+
+        .lb-status-locked {
+            color: #d9534f;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        .lb-delete-btn {
+            background: none;
+            border: none;
+            font-size: 18px;
+            padding: 4px;
+            width: auto;
+            box-shadow: none;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .lb-delete-btn:hover {
+            transform: scale(1.15);
+            background: none;
+            box-shadow: none;
+        }
+
+        .lb-empty {
+            text-align: center;
+            color: var(--label-color);
+            padding: 20px;
+            font-size: 14px;
         }
     </style>
 </head>
@@ -677,10 +840,35 @@
                 </div>
             </div>
 
+            <!-- ==================== LEADERBOARD PANEL (ADMIN ONLY) ==================== -->
+            <div id="leaderboardPanel">
+                <h2 style="margin-top: 0; color: #FFD700; font-size: 24px; border-bottom: 2px solid var(--border-color); padding-bottom: 8px; margin-bottom: 20px;">🏆 Leaderboard</h2>
+
+                <div class="leaderboard-header-row">
+                    <span class="lb-col-name">Student Name</span>
+                    <span class="lb-col-score">High Score</span>
+                    <span class="lb-col-status">Limit</span>
+                    <span class="lb-col-action"></span>
+                </div>
+
+                <div id="leaderboardList"></div>
+
+                <div class="menu-element" style="margin-top: 20px;">
+                    <button id="backFromLeaderboardBtn" class="secondary-btn">⬅️ Back to Menu</button>
+                </div>
+            </div>
+
             <!-- ==================== MAIN MENU VIEW ==================== -->
             <div id="mainMenuPanel">
+                <div class="menu-element" style="margin: 0 0 15px 0; position: relative;">
+                    <input id="appSearchInput" type="text" placeholder="🔍 Search anything (e.g. theme mode)..." autocomplete="off">
+                    <div id="appSearchResults"></div>
+                </div>
                 <div class="profile-badge">
                     🧑‍🚀 Pilot: <span id="activePilot">Guest</span>
+                </div>
+                <div id="playTimeRemainingBadge" class="menu-stat" style="display: none; margin-bottom: 15px; justify-content: center; gap: 8px;">
+                    <span id="playTimeRemainingText">⏱ -- left</span>
                 </div>
                 <div class="menu-element">
                     <div class="menu-stat">
@@ -699,6 +887,9 @@
                 </div>
                 <div class="menu-element" id="adminNotificationsBtnContainer" style="display: none;">
                     <button id="adminNotificationsBtn" class="secondary-btn">👮 Admin Notifications <span id="notificationCount" class="admin-badge">0</span></button>
+                </div>
+                <div class="menu-element" id="leaderboardBtnContainer" style="display: none;">
+                    <button id="leaderboardBtn" class="secondary-btn" style="background-color: #6f42c1;">🏆 Leaderboard</button>
                 </div>
                 <div class="menu-element">
                     <button id="startBtn">Start Game</button>
@@ -857,6 +1048,22 @@
         </div>
     </div>
 
+    <!-- ==================== CUSTOM TIME-INPUT MODAL (for granting extra play time) ==================== -->
+    <div id="timeInputModalOverlay">
+        <div id="timeInputModalBox">
+            <h3 id="timeInputModalTitle">Grant extra time</h3>
+            <p id="timeInputModalMessage">How much time should they get?</p>
+            <div class="menu-element" style="align-items: flex-start; margin: 0 0 15px 0;">
+                <input id="timeInputHours" type="number" min="0" placeholder="Hours" style="margin-bottom: 8px;">
+                <input id="timeInputMinutes" type="number" min="0" max="59" placeholder="Minutes">
+            </div>
+            <div id="timeInputModalActions">
+                <button id="timeInputConfirmBtn" class="accept-btn">✅ Grant Time</button>
+                <button id="timeInputCancelBtn" class="decline-btn">❌ Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Global App Scripts -->
     <script>
         const canvas = document.getElementById("gameCanvas");
@@ -866,6 +1073,10 @@
         const timerText = document.getElementById("timerText");
         const streakText = document.getElementById("streakText");
         const highScoreText = document.getElementById("highScoreText");
+        const playTimeRemainingBadge = document.getElementById("playTimeRemainingBadge");
+        const playTimeRemainingText = document.getElementById("playTimeRemainingText");
+        const appSearchInput = document.getElementById("appSearchInput");
+        const appSearchResults = document.getElementById("appSearchResults");
         
         const menu = document.getElementById("menu");
         const loginPanel = document.getElementById("loginPanel");
@@ -878,6 +1089,11 @@
         const missedGamesBtn = document.getElementById("missedGamesBtn");
         const backFromMissedBtn = document.getElementById("backFromMissedBtn");
         const saveExitBtn = document.getElementById("saveExitBtn");
+        const leaderboardPanel = document.getElementById("leaderboardPanel");
+        const leaderboardList = document.getElementById("leaderboardList");
+        const leaderboardBtn = document.getElementById("leaderboardBtn");
+        const leaderboardBtnContainer = document.getElementById("leaderboardBtnContainer");
+        const backFromLeaderboardBtn = document.getElementById("backFromLeaderboardBtn");
         const guestNamePanel = document.getElementById("guestNamePanel");
         const guestWaitingPanel = document.getElementById("guestWaitingPanel");
         const resetRequestPanel = document.getElementById("resetRequestPanel");
@@ -1004,6 +1220,267 @@
             }
         }
 
+        // --- PLAY TIME LIMIT SYSTEM ---
+        // Each registered player (and guest) gets a 2-hour play window once they first
+        // click "Start Game". Once that window expires, they're locked out of starting,
+        // continuing, or resuming any game until either 2 hours pass automatically, or
+        // the admin manually grants extra time. Admins themselves are exempt entirely.
+        const DEFAULT_PLAY_LIMIT_MS = 30 * 60 * 1000; // 30 minutes
+
+        // Returns the storage/lookup key used to identify this player's limit record.
+        function getPlayLimitKey() {
+            return isGuest ? currentGuestSessionId : currentPilot.toLowerCase();
+        }
+
+        // Returns a unique storage key identifying the current player for stats like
+        // high score and streak. Each guest gets their own key based on their session ID,
+        // instead of all guests previously sharing a single "guest" bucket (which caused
+        // one guest's score to silently overwrite another's).
+        function getPlayerStatsKey() {
+            return isGuest ? `guest_${currentGuestSessionId}` : currentPilot.toLowerCase();
+        }
+
+        async function getAllPlayLimits() {
+            await syncCloudData(true); // silent - this runs on every Start Game click
+            const saved = storage.getItem("starCollectorPlayLimits");
+            if (saved) {
+                try {
+                    return JSON.parse(saved);
+                } catch (e) {
+                    return {};
+                }
+            }
+            return {};
+        }
+
+        // Checks whether the current player is currently locked out.
+        // Returns { locked: false } or { locked: true, resetsAt: <Date> }.
+        async function checkPlayLimit() {
+            if (isAdmin) return { locked: false }; // admins are never limited
+
+            const key = getPlayLimitKey();
+            if (!key) return { locked: false };
+
+            const allLimits = await getAllPlayLimits();
+            const record = allLimits[key];
+
+            if (!record || !record.limitExpiresAt) {
+                return { locked: false };
+            }
+
+            const expiresAt = new Date(record.limitExpiresAt);
+            if (Date.now() < expiresAt.getTime()) {
+                return { locked: true, resetsAt: expiresAt };
+            }
+
+            // Window has expired naturally - clear it out so a fresh one can start
+            delete allLimits[key];
+            await safeCloudUpdate("starCollectorPlayLimits", allLimits);
+            return { locked: false };
+        }
+
+        // Starts a fresh 2-hour window for the current player, ONLY if they don't
+        // already have an active one running (so repeated Start Game clicks during
+        // the same window don't keep pushing the expiry forward).
+        async function ensurePlayWindowStarted() {
+            if (isAdmin) return;
+
+            const key = getPlayLimitKey();
+            if (!key) return;
+
+            const allLimits = await getAllPlayLimits();
+            const existing = allLimits[key];
+
+            const alreadyActive = existing && existing.limitExpiresAt && Date.now() < new Date(existing.limitExpiresAt).getTime();
+            if (alreadyActive) return; // window already running, don't touch it
+
+            allLimits[key] = {
+                displayName: currentPilot,
+                limitStartedAt: new Date().toISOString(),
+                limitExpiresAt: new Date(Date.now() + DEFAULT_PLAY_LIMIT_MS).toISOString()
+            };
+            await safeCloudUpdate("starCollectorPlayLimits", allLimits);
+        }
+
+        // Formats a Date as a simple HH:MM time string for the lockout message.
+        function formatTimeOnly(date) {
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        // Updates the "⏱ Xm left" / locked badge on the home screen, so players get
+        // an early warning instead of being abruptly blocked when they click Start Game.
+        let playTimeBadgeInterval = null;
+
+        async function refreshPlayTimeBadge() {
+            if (isAdmin) {
+                playTimeRemainingBadge.style.display = "none";
+                return;
+            }
+
+            const key = getPlayLimitKey();
+            if (!key) {
+                playTimeRemainingBadge.style.display = "none";
+                return;
+            }
+
+            const allLimits = await getAllPlayLimits();
+            const record = allLimits[key];
+
+            if (!record || !record.limitExpiresAt) {
+                // No active window yet - nothing to show until they start playing
+                playTimeRemainingBadge.style.display = "none";
+                return;
+            }
+
+            const msRemaining = new Date(record.limitExpiresAt).getTime() - Date.now();
+
+            if (msRemaining <= 0) {
+                playTimeRemainingText.textContent = `⏳ Limit reached - resets at ${formatTimeOnly(new Date(record.limitExpiresAt))}`;
+                playTimeRemainingBadge.classList.add("lb-time-warning");
+                playTimeRemainingBadge.style.display = "flex";
+                return;
+            }
+
+            const totalMinutes = Math.ceil(msRemaining / 60000);
+            const hours = Math.floor(totalMinutes / 60);
+            const minutes = totalMinutes % 60;
+            const timeText = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+
+            playTimeRemainingText.textContent = `⏱ ${timeText} left`;
+            // Show a warning color once under 5 minutes remain
+            if (totalMinutes <= 5) {
+                playTimeRemainingBadge.classList.add("lb-time-warning");
+            } else {
+                playTimeRemainingBadge.classList.remove("lb-time-warning");
+            }
+            playTimeRemainingBadge.style.display = "flex";
+        }
+
+        function startPlayTimeBadgeTicker() {
+            stopPlayTimeBadgeTicker();
+            refreshPlayTimeBadge();
+            playTimeBadgeInterval = setInterval(refreshPlayTimeBadge, 15000); // refresh every 15s
+        }
+
+        function stopPlayTimeBadgeTicker() {
+            if (playTimeBadgeInterval) {
+                clearInterval(playTimeBadgeInterval);
+                playTimeBadgeInterval = null;
+            }
+        }
+
+        // --- UNIVERSAL SEARCH ---
+        // A simple "command palette" style index: each entry has a label, keywords to
+        // match against, whether it requires admin access, and an action that navigates
+        // there. Typing "theme" or "dark mode" jumps straight to Game Settings, etc.
+        function getSearchIndex() {
+            return [
+                {
+                    label: "Game Settings",
+                    section: "Settings",
+                    keywords: ["settings", "game settings", "difficulty", "options"],
+                    adminOnly: false,
+                    action: () => settingsBtn.click()
+                },
+                {
+                    label: "Theme Mode (Dark / Light)",
+                    section: "Settings",
+                    keywords: ["theme", "theme mode", "dark mode", "light mode", "dark", "light", "appearance"],
+                    adminOnly: false,
+                    action: () => settingsBtn.click()
+                },
+                {
+                    label: "Difficulty",
+                    section: "Settings",
+                    keywords: ["difficulty", "easy", "medium", "hard"],
+                    adminOnly: false,
+                    action: () => settingsBtn.click()
+                },
+                {
+                    label: "Start Game",
+                    section: "Play",
+                    keywords: ["start", "start game", "play"],
+                    adminOnly: false,
+                    action: () => startBtn.click()
+                },
+                {
+                    label: "Missed Games",
+                    section: "Play",
+                    keywords: ["missed games", "missed", "continue", "resume", "saved games"],
+                    adminOnly: false,
+                    action: () => missedGamesBtn.click()
+                },
+                {
+                    label: "Log Out",
+                    section: "Account",
+                    keywords: ["log out", "logout", "sign out"],
+                    adminOnly: false,
+                    action: () => logoutBtn.click()
+                },
+                {
+                    label: "Admin Notifications",
+                    section: "Admin",
+                    keywords: ["admin notifications", "notifications", "requests", "signups", "pending"],
+                    adminOnly: true,
+                    action: () => adminNotificationsBtn.click()
+                },
+                {
+                    label: "Leaderboard",
+                    section: "Admin",
+                    keywords: ["leaderboard", "scores", "students", "high scores", "play limits", "limits"],
+                    adminOnly: true,
+                    action: () => leaderboardBtn.click()
+                }
+            ];
+        }
+
+        function runAppSearch(query) {
+            const trimmed = query.trim().toLowerCase();
+            appSearchResults.innerHTML = '';
+
+            if (!trimmed) {
+                appSearchResults.classList.remove("active");
+                return;
+            }
+
+            const index = getSearchIndex().filter(entry => !entry.adminOnly || isAdmin);
+            const matches = index.filter(entry =>
+                entry.label.toLowerCase().includes(trimmed) ||
+                entry.keywords.some(kw => kw.includes(trimmed))
+            );
+
+            if (matches.length === 0) {
+                appSearchResults.innerHTML = '<div class="search-no-results">No Data</div>';
+                appSearchResults.classList.add("active");
+                return;
+            }
+
+            matches.forEach((entry) => {
+                const item = document.createElement('div');
+                item.className = 'search-result-item';
+                item.innerHTML = `<span>${entry.label}</span><span class="search-result-section">${entry.section}</span>`;
+                item.addEventListener('click', () => {
+                    appSearchInput.value = '';
+                    appSearchResults.classList.remove('active');
+                    entry.action();
+                });
+                appSearchResults.appendChild(item);
+            });
+
+            appSearchResults.classList.add("active");
+        }
+
+        appSearchInput.addEventListener('input', () => {
+            runAppSearch(appSearchInput.value);
+        });
+
+        // Close the results dropdown if clicking elsewhere on the page
+        document.addEventListener('click', (e) => {
+            if (!appSearchInput.contains(e.target) && !appSearchResults.contains(e.target)) {
+                appSearchResults.classList.remove('active');
+            }
+        });
+
         // --- URL PATH SYNC ---
         // Updates the browser's address bar to reflect the current screen, without reloading the page.
         // Uses History API (pushState) so back/forward and bookmarking feel natural.
@@ -1085,6 +1562,54 @@
                     resolve();
                 }
                 infoModalOkBtn.addEventListener("click", onOk);
+            });
+        }
+
+        // Shows the custom time-input modal for granting a player extra play time.
+        // Returns a Promise<number|null> - the number of milliseconds to grant, or
+        // null if the admin cancelled or entered nothing usable.
+        const timeInputModalOverlay = document.getElementById("timeInputModalOverlay");
+        const timeInputModalTitle = document.getElementById("timeInputModalTitle");
+        const timeInputModalMessage = document.getElementById("timeInputModalMessage");
+        const timeInputHours = document.getElementById("timeInputHours");
+        const timeInputMinutes = document.getElementById("timeInputMinutes");
+        const timeInputConfirmBtn = document.getElementById("timeInputConfirmBtn");
+        const timeInputCancelBtn = document.getElementById("timeInputCancelBtn");
+
+        function showTimeInput(title, message) {
+            return new Promise((resolve) => {
+                timeInputModalTitle.textContent = title;
+                timeInputModalMessage.textContent = message;
+                timeInputHours.value = "";
+                timeInputMinutes.value = "";
+                timeInputModalOverlay.classList.add("active");
+                timeInputHours.focus();
+
+                function cleanup(result) {
+                    timeInputModalOverlay.classList.remove("active");
+                    timeInputConfirmBtn.removeEventListener("click", onConfirm);
+                    timeInputCancelBtn.removeEventListener("click", onCancel);
+                    resolve(result);
+                }
+
+                function onConfirm() {
+                    const hours = parseFloat(timeInputHours.value) || 0;
+                    const minutes = parseFloat(timeInputMinutes.value) || 0;
+                    const totalMs = (hours * 60 * 60 * 1000) + (minutes * 60 * 1000);
+
+                    if (totalMs <= 0) {
+                        // Don't close - let them try again with valid numbers
+                        return;
+                    }
+                    cleanup(totalMs);
+                }
+
+                function onCancel() {
+                    cleanup(null);
+                }
+
+                timeInputConfirmBtn.addEventListener("click", onConfirm);
+                timeInputCancelBtn.addEventListener("click", onCancel);
             });
         }
 
@@ -1848,6 +2373,7 @@
             
             // Stop notification polling
             stopAdminNotificationPolling();
+            stopPlayTimeBadgeTicker();
             
             // Toggle panels
             mainMenuPanel.style.display = "none";
@@ -2138,6 +2664,175 @@
         approveAllBtn.addEventListener("click", approveAllSignups);
         declineAllBtn.addEventListener("click", declineAllSignups);
 
+        // --- LEADERBOARD (ADMIN ONLY) ---
+        async function loadLeaderboard() {
+            // Pull the latest users, guests, high scores, and play limits from the cloud first
+            await syncCloudData();
+
+            let users = {};
+            const savedUsers = storage.getItem("starCollectorUsers");
+            if (savedUsers) {
+                try { users = JSON.parse(savedUsers); } catch (e) { users = {}; }
+            }
+
+            let approvedGuests = [];
+            const savedApproved = storage.getItem("starCollectorApprovedGuests");
+            if (savedApproved) {
+                try { approvedGuests = JSON.parse(savedApproved); } catch (e) { approvedGuests = []; }
+            }
+
+            const allLimits = await getAllPlayLimits();
+
+            // Build one unified list of entries, each tagged with how to look up their
+            // stats and how to delete them later (registered user vs. guest differ).
+            const entries = [];
+
+            Object.keys(users).forEach((username) => {
+                const userInfo = users[username];
+                const displayName = userInfo.originalName || userInfo.fullName || username;
+                const scoreKey = `starCollectorHighScore_${username}`;
+                const savedScore = storage.getItem(scoreKey);
+                const highScore = (savedScore !== null && !isNaN(savedScore)) ? parseInt(savedScore, 10) : 0;
+
+                entries.push({
+                    type: "user",
+                    lookupKey: username,
+                    displayName: displayName,
+                    highScore: highScore,
+                    limitRecord: allLimits[username]
+                });
+            });
+
+            approvedGuests.forEach((guest) => {
+                const statsKey = `guest_${guest.sessionId}`;
+                const scoreKey = `starCollectorHighScore_${statsKey}`;
+                const savedScore = storage.getItem(scoreKey);
+                const highScore = (savedScore !== null && !isNaN(savedScore)) ? parseInt(savedScore, 10) : 0;
+                const displayName = `${guest.fullName || 'Guest'} (Guest)`;
+
+                entries.push({
+                    type: "guest",
+                    lookupKey: guest.sessionId,
+                    displayName: displayName,
+                    highScore: highScore,
+                    limitRecord: allLimits[guest.sessionId]
+                });
+            });
+
+            if (entries.length === 0) {
+                leaderboardList.innerHTML = '<div class="lb-empty">✨ No approved students or guests yet.</div>';
+                return;
+            }
+
+            // Sort by high score, highest first - this is what actually makes it a "leaderboard"
+            entries.sort((a, b) => b.highScore - a.highScore);
+
+            leaderboardList.innerHTML = '';
+            entries.forEach((entry) => {
+                const safeName = entry.displayName.replace(/'/g, "\\'");
+                let statusHTML;
+                if (entry.limitRecord && entry.limitRecord.limitExpiresAt && Date.now() < new Date(entry.limitRecord.limitExpiresAt).getTime()) {
+                    const resetTime = formatTimeOnly(new Date(entry.limitRecord.limitExpiresAt));
+                    statusHTML = `<span class="lb-status-locked" onclick="extendPlayerLimit('${entry.lookupKey}', '${safeName}', '${entry.type}')">🚮 Reached (resets ${resetTime})</span>`;
+                } else {
+                    statusHTML = `<span class="lb-status-ok">✅ OK</span>`;
+                }
+
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'leaderboard-row';
+                rowDiv.innerHTML = `
+                    <span class="lb-col-name">${entry.displayName}</span>
+                    <span class="lb-col-score">${entry.highScore}</span>
+                    <span class="lb-col-status">${statusHTML}</span>
+                    <span class="lb-col-action">
+                        <button class="lb-delete-btn" onclick="deleteLeaderboardAccount('${entry.lookupKey}', '${safeName}', '${entry.type}')" title="Delete account">🚮</button>
+                    </span>
+                `;
+                leaderboardList.appendChild(rowDiv);
+            });
+        }
+
+        // Admin clicks the locked status text to grant extra time immediately,
+        // instead of waiting for the automatic 2-hour reset.
+        async function extendPlayerLimit(lookupKey, displayName, type) {
+            const grantedMs = await showTimeInput(
+                "Grant extra time",
+                `How much extra time should "${displayName}" get? (enter hours and/or minutes)`
+            );
+            if (!grantedMs) return; // cancelled or entered nothing
+
+            const allLimits = await getAllPlayLimits();
+
+            // Grant a fresh window of exactly the custom duration the admin specified,
+            // starting from right now.
+            allLimits[lookupKey] = {
+                displayName: displayName,
+                limitStartedAt: new Date().toISOString(),
+                limitExpiresAt: new Date(Date.now() + grantedMs).toISOString()
+            };
+            await safeCloudUpdate("starCollectorPlayLimits", allLimits);
+
+            loadLeaderboard();
+            const hours = Math.floor(grantedMs / (60 * 60 * 1000));
+            const minutes = Math.round((grantedMs % (60 * 60 * 1000)) / (60 * 1000));
+            const durationText = [hours > 0 ? `${hours}h` : '', minutes > 0 ? `${minutes}m` : ''].filter(Boolean).join(' ');
+            await showInfo(`✅ "${displayName}" has been granted ${durationText} of play time.`);
+        }
+
+        // Deletes a student's account entirely: removes them from approved users
+        // and clears their play limit record. Uses the custom confirmation modal,
+        // exactly as requested: "Are you sure you want to delete this account?"
+        async function deleteLeaderboardAccount(lookupKey, displayName, type) {
+            const confirmed = await showConfirm(
+                "Delete this account?",
+                `Are you sure you want to delete this account? "${displayName}" will be permanently removed${type === "user" ? " and will need to sign up again" : ""}.`
+            );
+            if (!confirmed) return;
+
+            await syncCloudData();
+
+            if (type === "guest") {
+                let approvedGuests = [];
+                const savedApproved = storage.getItem("starCollectorApprovedGuests");
+                if (savedApproved) {
+                    try { approvedGuests = JSON.parse(savedApproved); } catch (e) { approvedGuests = []; }
+                }
+                approvedGuests = approvedGuests.filter(g => g.sessionId !== lookupKey);
+                await safeCloudUpdate("starCollectorApprovedGuests", approvedGuests);
+            } else {
+                let users = {};
+                const savedUsers = storage.getItem("starCollectorUsers");
+                if (savedUsers) {
+                    try { users = JSON.parse(savedUsers); } catch (e) { users = {}; }
+                }
+                delete users[lookupKey];
+                await safeCloudUpdate("starCollectorUsers", users);
+            }
+
+            // Also clean up their play limit record, if any
+            const allLimits = await getAllPlayLimits();
+            if (allLimits[lookupKey]) {
+                delete allLimits[lookupKey];
+                await safeCloudUpdate("starCollectorPlayLimits", allLimits);
+            }
+
+            loadLeaderboard();
+            await showInfo(`🚮 Account for "${displayName}" has been deleted.`);
+        }
+
+        leaderboardBtn.addEventListener("click", () => {
+            mainMenuPanel.style.display = "none";
+            leaderboardPanel.style.display = "block";
+            loadLeaderboard();
+            updateURL("Leaderboard");
+        });
+
+        backFromLeaderboardBtn.addEventListener("click", () => {
+            leaderboardPanel.style.display = "none";
+            mainMenuPanel.style.display = "block";
+            updateURL("Home-Page");
+        });
+
         adminNotificationsBtn.addEventListener("click", () => {
             mainMenuPanel.style.display = "none";
             adminNotificationsPanel.style.display = "block";
@@ -2169,6 +2864,7 @@
             // Show admin button only for super admin
             if (isAdmin) {
                 adminNotificationsBtnContainer.style.display = "block";
+                leaderboardBtnContainer.style.display = "block";
                 
                 // Reset notification tracking
                 lastNotificationCount = 0;
@@ -2182,13 +2878,14 @@
                 startAdminNotificationPolling();
             } else {
                 adminNotificationsBtnContainer.style.display = "none";
+                leaderboardBtnContainer.style.display = "none";
                 stopAdminNotificationPolling();
             }
 
             // Load Streak System 
             const todayDateString = new Date().toDateString(); 
-            const streakKey = isGuest ? "starCollectorStreak_guest" : `starCollectorStreak_${currentPilot.toLowerCase()}`;
-            const lastPlayedKey = isGuest ? "starCollectorLastDate_guest" : `starCollectorLastDate_${currentPilot.toLowerCase()}`;
+            const streakKey = `starCollectorStreak_${getPlayerStatsKey()}`;
+            const lastPlayedKey = `starCollectorLastDate_${getPlayerStatsKey()}`;
 
             const savedStreak = storage.getItem(streakKey);
             if (savedStreak !== null && !isNaN(savedStreak) && savedStreak !== "") {
@@ -2199,7 +2896,7 @@
             streakText.textContent = playStreak;
 
             // Load High Score for current authorized user
-            const scoreKey = isGuest ? "starCollectorHighScore_guest" : `starCollectorHighScore_${currentPilot.toLowerCase()}`;
+            const scoreKey = `starCollectorHighScore_${getPlayerStatsKey()}`;
             const savedHighScore = storage.getItem(scoreKey);
             if (savedHighScore !== null && !isNaN(savedHighScore) && savedHighScore !== "") {
                 highScore = parseInt(savedHighScore, 10);
@@ -2210,6 +2907,9 @@
 
             // Load Missed Games count for current user
             updateMissedGamesCount();
+
+            // Start the play-time-remaining badge ticker (no-op for admins)
+            startPlayTimeBadgeTicker();
         }
 
         // --- MISSED GAMES SYSTEM ---
@@ -2290,6 +2990,14 @@
         // Resume a missed game exactly where it was left off: restores score, level,
         // elapsed time, and difficulty, then jumps straight into active gameplay.
         async function resumeMissedGame(index) {
+            const limitStatus = await checkPlayLimit();
+            if (limitStatus.locked) {
+                await showInfo(`⏳ Your game play limit is reached and resets at ${formatTimeOnly(limitStatus.resetsAt)}.`);
+                return;
+            }
+            await ensurePlayWindowStarted();
+            stopPlayTimeBadgeTicker();
+
             let missedGames = getMissedGames();
             if (index < 0 || index >= missedGames.length) return;
 
@@ -2396,8 +3104,10 @@
             settingsPanel.style.display = "none";
             adminNotificationsPanel.style.display = "none";
             missedGamesPanel.style.display = "none";
+            leaderboardPanel.style.display = "none";
             mainMenuPanel.style.display = "block";
             updateURL("Home-Page");
+            startPlayTimeBadgeTicker();
 
             await showInfo("💾 Progress saved! You can see it under Missed Games.");
         });
@@ -2602,7 +3312,15 @@
         });
 
         // Start button trigger logic
-        startBtn.addEventListener("click", function() {
+        startBtn.addEventListener("click", async function() {
+            const limitStatus = await checkPlayLimit();
+            if (limitStatus.locked) {
+                await showInfo(`⏳ Your game play limit is reached and resets at ${formatTimeOnly(limitStatus.resetsAt)}.`);
+                return;
+            }
+            await ensurePlayWindowStarted();
+            stopPlayTimeBadgeTicker();
+
             const difficulty = difficultySelect.value;
 
             if (difficulty === "easy") {
@@ -2622,8 +3340,8 @@
 
             // --- STREAK VALIDATION ENGINE ---
             const todayDateString = new Date().toDateString(); 
-            const streakKey = isGuest ? "starCollectorStreak_guest" : `starCollectorStreak_${currentPilot.toLowerCase()}`;
-            const lastPlayedKey = isGuest ? "starCollectorLastDate_guest" : `starCollectorLastDate_${currentPilot.toLowerCase()}`;
+            const streakKey = `starCollectorStreak_${getPlayerStatsKey()}`;
+            const lastPlayedKey = `starCollectorLastDate_${getPlayerStatsKey()}`;
             const lastPlayedDate = storage.getItem(lastPlayedKey);
 
             if (lastPlayedDate !== todayDateString) {
@@ -2670,7 +3388,7 @@
                 if (score > highScore) {
                     highScore = score;
                     highScoreText.textContent = highScore;
-                    const scoreKey = isGuest ? "starCollectorHighScore_guest" : `starCollectorHighScore_${currentPilot.toLowerCase()}`;
+                    const scoreKey = `starCollectorHighScore_${getPlayerStatsKey()}`;
                     storage.setItem(scoreKey, highScore);
                 }
 
@@ -2729,8 +3447,10 @@
             // Clean view return
             settingsPanel.style.display = "none";
             adminNotificationsPanel.style.display = "none";
+            leaderboardPanel.style.display = "none";
             mainMenuPanel.style.display = "block";
             updateURL("Home-Page");
+            startPlayTimeBadgeTicker();
         });
     </script>
 
