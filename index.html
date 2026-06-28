@@ -710,6 +710,10 @@
             flex: 2;
             text-align: center;
             font-size: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
         }
 
         .lb-col-action {
@@ -725,8 +729,49 @@
         .lb-status-locked {
             color: #d9534f;
             font-weight: bold;
-            cursor: pointer;
-            text-decoration: underline;
+        }
+
+        .lb-mini-btn {
+            font-size: 11px;
+            padding: 4px 8px;
+            margin: 0 2px;
+            width: auto;
+            box-shadow: none;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .lb-mini-extend {
+            background-color: #5cb85c;
+            color: white;
+        }
+
+        .lb-mini-extend:hover {
+            background-color: #4cae4c;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .lb-mini-lock {
+            background-color: #d9534f;
+            color: white;
+        }
+
+        .lb-mini-lock:hover {
+            background-color: #c9302c;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .lb-mini-unlock {
+            background-color: #5cb85c;
+            color: white;
+        }
+
+        .lb-mini-unlock:hover {
+            background-color: #4cae4c;
+            transform: none;
+            box-shadow: none;
         }
 
         .lb-delete-btn {
@@ -1165,6 +1210,7 @@
         // Active logged-in Pilot session variables
         let isGuest = false;
         let currentPilot = "";
+        let currentPilotEmail = ""; // stable login identifier, used as the storage key for stats
         let isAdmin = false;
         let currentGuestSessionId = null;
         let authMode = "login"; // "login" or "signup"
@@ -1191,6 +1237,7 @@
             try {
                 localStorage.setItem(SESSION_KEY, JSON.stringify({
                     currentPilot: currentPilot,
+                    currentPilotEmail: currentPilotEmail,
                     isGuest: isGuest,
                     isAdmin: isAdmin,
                     currentGuestSessionId: currentGuestSessionId
@@ -1233,11 +1280,12 @@
         }
 
         // Returns a unique storage key identifying the current player for stats like
-        // high score and streak. Each guest gets their own key based on their session ID,
-        // instead of all guests previously sharing a single "guest" bucket (which caused
-        // one guest's score to silently overwrite another's).
+        // high score and streak. Uses the stable login email (lowercased) for registered
+        // users - NOT their display name, which can differ from their email and would
+        // cause a mismatch with how the Leaderboard looks scores up (it keys off email).
+        // Each guest gets their own key based on their unique session ID.
         function getPlayerStatsKey() {
-            return isGuest ? `guest_${currentGuestSessionId}` : currentPilot.toLowerCase();
+            return isGuest ? `guest_${currentGuestSessionId}` : currentPilotEmail.toLowerCase();
         }
 
         async function getAllPlayLimits() {
@@ -1264,7 +1312,17 @@
             const allLimits = await getAllPlayLimits();
             const record = allLimits[key];
 
-            if (!record || !record.limitExpiresAt) {
+            if (!record) {
+                return { locked: false };
+            }
+
+            // Admin-forced lock: no auto-expiry, stays locked until the admin
+            // explicitly unlocks them from the Leaderboard.
+            if (record.adminLocked) {
+                return { locked: true, adminLocked: true };
+            }
+
+            if (!record.limitExpiresAt) {
                 return { locked: false };
             }
 
@@ -1307,6 +1365,16 @@
             return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         }
 
+        // Builds the right lockout message depending on whether this is a normal
+        // timed limit (auto-resets at a known time) or an admin-forced lock (stays
+        // locked indefinitely until the admin personally unlocks them).
+        function buildLockoutMessage(limitStatus) {
+            if (limitStatus.adminLocked) {
+                return "🔒 Your limit was ended by admin. Please wait until admin permits you to play the game / unlocks you.";
+            }
+            return `⏳ Your game play limit is reached and resets at ${formatTimeOnly(limitStatus.resetsAt)}.`;
+        }
+
         // Updates the "⏱ Xm left" / locked badge on the home screen, so players get
         // an early warning instead of being abruptly blocked when they click Start Game.
         let playTimeBadgeInterval = null;
@@ -1326,8 +1394,21 @@
             const allLimits = await getAllPlayLimits();
             const record = allLimits[key];
 
-            if (!record || !record.limitExpiresAt) {
+            if (!record) {
                 // No active window yet - nothing to show until they start playing
+                playTimeRemainingBadge.style.display = "none";
+                return;
+            }
+
+            // Admin-forced lock: stays locked indefinitely until the admin unlocks them.
+            if (record.adminLocked) {
+                playTimeRemainingText.textContent = "🔒 Your limit was ended by admin. Please wait until admin permits you to play the game / unlocks you.";
+                playTimeRemainingBadge.classList.add("lb-time-warning");
+                playTimeRemainingBadge.style.display = "flex";
+                return;
+            }
+
+            if (!record.limitExpiresAt) {
                 playTimeRemainingBadge.style.display = "none";
                 return;
             }
@@ -2109,6 +2190,7 @@
                     // User exists in approved list
                     if (users[lowerUsername].password === password) {
                         currentPilot = users[lowerUsername].originalName;
+                        currentPilotEmail = lowerUsername;
                         isGuest = false;
                         isAdmin = false;
                         enterMainDashboard();
@@ -2366,6 +2448,7 @@
             if (!confirmed) return;
 
             currentPilot = "";
+            currentPilotEmail = "";
             isGuest = false;
             isAdmin = false;
             lastNotificationCount = 0;
@@ -2730,10 +2813,19 @@
             leaderboardList.innerHTML = '';
             entries.forEach((entry) => {
                 const safeName = entry.displayName.replace(/'/g, "\\'");
+                const record = entry.limitRecord;
+                const isTimedLock = record && record.limitExpiresAt && !record.adminLocked && Date.now() < new Date(record.limitExpiresAt).getTime();
+                const isAdminLock = record && record.adminLocked;
+
                 let statusHTML;
-                if (entry.limitRecord && entry.limitRecord.limitExpiresAt && Date.now() < new Date(entry.limitRecord.limitExpiresAt).getTime()) {
-                    const resetTime = formatTimeOnly(new Date(entry.limitRecord.limitExpiresAt));
-                    statusHTML = `<span class="lb-status-locked" onclick="extendPlayerLimit('${entry.lookupKey}', '${safeName}', '${entry.type}')">🚮 Reached (resets ${resetTime})</span>`;
+                if (isAdminLock) {
+                    statusHTML = `<span class="lb-status-locked">🔒 Locked by admin</span>
+                        <button class="lb-mini-btn lb-mini-unlock" onclick="adminUnlockPlayer('${entry.lookupKey}', '${safeName}')">🔓 Unlock</button>`;
+                } else if (isTimedLock) {
+                    const resetTime = formatTimeOnly(new Date(record.limitExpiresAt));
+                    statusHTML = `<span class="lb-status-locked">🚮 Reached (resets ${resetTime})</span>
+                        <button class="lb-mini-btn lb-mini-extend" onclick="extendPlayerLimit('${entry.lookupKey}', '${safeName}', '${entry.type}')">⏰ Extend</button>
+                        <button class="lb-mini-btn lb-mini-lock" onclick="forceLockPlayer('${entry.lookupKey}', '${safeName}')">OK</button>`;
                 } else {
                     statusHTML = `<span class="lb-status-ok">✅ OK</span>`;
                 }
@@ -2777,6 +2869,44 @@
             const minutes = Math.round((grantedMs % (60 * 60 * 1000)) / (60 * 1000));
             const durationText = [hours > 0 ? `${hours}h` : '', minutes > 0 ? `${minutes}m` : ''].filter(Boolean).join(' ');
             await showInfo(`✅ "${displayName}" has been granted ${durationText} of play time.`);
+        }
+
+        // Admin clicks "OK" on an already-timed-out player to convert their lock into
+        // a permanent admin lock - it no longer auto-resets, and the player sees a
+        // message telling them the admin ended it and they must wait to be unlocked.
+        async function forceLockPlayer(lookupKey, displayName) {
+            const confirmed = await showConfirm(
+                "Lock this player?",
+                `End "${displayName}"'s limit and keep them locked until you personally unlock them? They will NOT be able to play until you unlock them.`
+            );
+            if (!confirmed) return;
+
+            const allLimits = await getAllPlayLimits();
+            allLimits[lookupKey] = {
+                displayName: displayName,
+                adminLocked: true,
+                lockedAt: new Date().toISOString()
+            };
+            await safeCloudUpdate("starCollectorPlayLimits", allLimits);
+
+            loadLeaderboard();
+            await showInfo(`🔒 "${displayName}" is now locked until you unlock them.`);
+        }
+
+        // Admin unlocks a player who was placed under an admin-forced lock.
+        async function adminUnlockPlayer(lookupKey, displayName) {
+            const confirmed = await showConfirm(
+                "Unlock this player?",
+                `Allow "${displayName}" to play again?`
+            );
+            if (!confirmed) return;
+
+            const allLimits = await getAllPlayLimits();
+            delete allLimits[lookupKey];
+            await safeCloudUpdate("starCollectorPlayLimits", allLimits);
+
+            loadLeaderboard();
+            await showInfo(`🔓 "${displayName}" has been unlocked and can play again.`);
         }
 
         // Deletes a student's account entirely: removes them from approved users
@@ -2992,7 +3122,7 @@
         async function resumeMissedGame(index) {
             const limitStatus = await checkPlayLimit();
             if (limitStatus.locked) {
-                await showInfo(`⏳ Your game play limit is reached and resets at ${formatTimeOnly(limitStatus.resetsAt)}.`);
+                await showInfo(buildLockoutMessage(limitStatus));
                 return;
             }
             await ensurePlayWindowStarted();
@@ -3173,11 +3303,22 @@
                     users = {};
                 }
             }
-            const lowerPilot = saved.currentPilot.toLowerCase();
-            const stillExists = Object.values(users).some(u => u.originalName && u.originalName.toLowerCase() === lowerPilot);
 
-            if (stillExists) {
-                currentPilot = saved.currentPilot;
+            // Prefer looking the account up by the saved email key directly (reliable),
+            // falling back to matching by display name only for older saved sessions
+            // that predate this fix and don't have an email stored yet.
+            let matchedEmail = saved.currentPilotEmail && users[saved.currentPilotEmail] ? saved.currentPilotEmail : null;
+            if (!matchedEmail) {
+                const lowerPilot = saved.currentPilot.toLowerCase();
+                matchedEmail = Object.keys(users).find(email => {
+                    const u = users[email];
+                    return u.originalName && u.originalName.toLowerCase() === lowerPilot;
+                }) || null;
+            }
+
+            if (matchedEmail) {
+                currentPilot = users[matchedEmail].originalName;
+                currentPilotEmail = matchedEmail;
                 isGuest = false;
                 isAdmin = false;
                 enterMainDashboard();
@@ -3315,7 +3456,7 @@
         startBtn.addEventListener("click", async function() {
             const limitStatus = await checkPlayLimit();
             if (limitStatus.locked) {
-                await showInfo(`⏳ Your game play limit is reached and resets at ${formatTimeOnly(limitStatus.resetsAt)}.`);
+                await showInfo(buildLockoutMessage(limitStatus));
                 return;
             }
             await ensurePlayWindowStarted();
