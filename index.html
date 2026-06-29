@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Star Collector</title>
+    <title>Star Collector Game</title>
     <!-- URL-Encoded SVG Favicon to ensure the golden star emoji displays in the browser tab -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E⭐%3C/text%3E%3C/svg%3E">
     <style>
@@ -488,12 +489,6 @@
             color: #4a55a2;
         }
 
-        #playTimeRemainingBadge.lb-time-warning {
-            color: #FF6B6B !important;
-            border-color: rgba(255, 107, 107, 0.4) !important;
-            background-color: rgba(255, 107, 107, 0.1) !important;
-        }
-
         /* Notification badge animation */
         @keyframes badgePulse {
             0%, 100% { transform: scale(1); }
@@ -596,67 +591,6 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* --- UNIVERSAL SEARCH --- */
-        #appSearchInput {
-            margin-bottom: 0;
-        }
-
-        #appSearchResults {
-            display: none;
-            position: absolute;
-            top: calc(100% + 4px);
-            left: 0;
-            right: 0;
-            background-color: var(--panel-bg);
-            border: 2px solid var(--border-color);
-            border-radius: 8px;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-            z-index: 50;
-            max-height: 280px;
-            overflow-y: auto;
-            text-align: left;
-        }
-
-        #appSearchResults.active {
-            display: block;
-        }
-
-        .search-result-item {
-            padding: 10px 14px;
-            cursor: pointer;
-            font-size: 14px;
-            color: var(--text-color);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        [data-theme="light"] .search-result-item {
-            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-        }
-
-        .search-result-item:last-child {
-            border-bottom: none;
-        }
-
-        .search-result-item:hover {
-            background-color: rgba(255, 215, 0, 0.12);
-        }
-
-        .search-result-item .search-result-section {
-            font-size: 11px;
-            color: var(--label-color);
-            font-weight: bold;
-        }
-
-        .search-no-results {
-            padding: 14px;
-            text-align: center;
-            color: var(--label-color);
-            font-size: 14px;
-        }
-
         /* --- LEADERBOARD --- */
         #leaderboardPanel {
             display: none;
@@ -710,15 +644,14 @@
             flex: 2;
             text-align: center;
             font-size: 12px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
         }
 
         .lb-col-action {
-            flex: 0 0 36px;
+            flex: 0 0 70px;
             text-align: center;
+            display: flex;
+            gap: 4px;
+            justify-content: center;
         }
 
         .lb-status-ok {
@@ -729,49 +662,8 @@
         .lb-status-locked {
             color: #d9534f;
             font-weight: bold;
-        }
-
-        .lb-mini-btn {
-            font-size: 11px;
-            padding: 4px 8px;
-            margin: 0 2px;
-            width: auto;
-            box-shadow: none;
-            border-radius: 4px;
-            display: inline-block;
-        }
-
-        .lb-mini-extend {
-            background-color: #5cb85c;
-            color: white;
-        }
-
-        .lb-mini-extend:hover {
-            background-color: #4cae4c;
-            transform: none;
-            box-shadow: none;
-        }
-
-        .lb-mini-lock {
-            background-color: #d9534f;
-            color: white;
-        }
-
-        .lb-mini-lock:hover {
-            background-color: #c9302c;
-            transform: none;
-            box-shadow: none;
-        }
-
-        .lb-mini-unlock {
-            background-color: #5cb85c;
-            color: white;
-        }
-
-        .lb-mini-unlock:hover {
-            background-color: #4cae4c;
-            transform: none;
-            box-shadow: none;
+            cursor: pointer;
+            text-decoration: underline;
         }
 
         .lb-delete-btn {
@@ -905,15 +797,8 @@
 
             <!-- ==================== MAIN MENU VIEW ==================== -->
             <div id="mainMenuPanel">
-                <div class="menu-element" style="margin: 0 0 15px 0; position: relative;">
-                    <input id="appSearchInput" type="text" placeholder="🔍 Search anything (e.g. theme mode)..." autocomplete="off">
-                    <div id="appSearchResults"></div>
-                </div>
                 <div class="profile-badge">
                     🧑‍🚀 Pilot: <span id="activePilot">Guest</span>
-                </div>
-                <div id="playTimeRemainingBadge" class="menu-stat" style="display: none; margin-bottom: 15px; justify-content: center; gap: 8px;">
-                    <span id="playTimeRemainingText">⏱ -- left</span>
                 </div>
                 <div class="menu-element">
                     <div class="menu-stat">
@@ -1056,6 +941,7 @@
             <span class="stat-box">Score: <span id="scoreText">0</span></span>
             <span class="stat-box">Time: <span id="timerText">00:00</span></span>
             <span class="stat-box">Level: <span id="levelText">1</span></span>
+            <span class="stat-box" id="playLimitBadge" style="display:none; border-color:#FF8C42; color:#FF8C42;">⏳ <span id="playLimitText">--:--</span></span>
         </div>
         
         <canvas id="gameCanvas" width="500" height="400"></canvas>
@@ -1118,10 +1004,6 @@
         const timerText = document.getElementById("timerText");
         const streakText = document.getElementById("streakText");
         const highScoreText = document.getElementById("highScoreText");
-        const playTimeRemainingBadge = document.getElementById("playTimeRemainingBadge");
-        const playTimeRemainingText = document.getElementById("playTimeRemainingText");
-        const appSearchInput = document.getElementById("appSearchInput");
-        const appSearchResults = document.getElementById("appSearchResults");
         
         const menu = document.getElementById("menu");
         const loginPanel = document.getElementById("loginPanel");
@@ -1210,7 +1092,6 @@
         // Active logged-in Pilot session variables
         let isGuest = false;
         let currentPilot = "";
-        let currentPilotEmail = ""; // stable login identifier, used as the storage key for stats
         let isAdmin = false;
         let currentGuestSessionId = null;
         let authMode = "login"; // "login" or "signup"
@@ -1237,7 +1118,6 @@
             try {
                 localStorage.setItem(SESSION_KEY, JSON.stringify({
                     currentPilot: currentPilot,
-                    currentPilotEmail: currentPilotEmail,
                     isGuest: isGuest,
                     isAdmin: isAdmin,
                     currentGuestSessionId: currentGuestSessionId
@@ -1268,33 +1148,21 @@
         }
 
         // --- PLAY TIME LIMIT SYSTEM ---
-        // Each registered player (and guest) gets a 30-minute ACTIVE PLAY allowance.
-        // This only counts down while a game is actually running (canvas visible) -
-        // sitting on the home menu, settings, leaderboard, etc. does NOT consume it.
-        // Once the allowance hits 0, the player is locked out, and a separate 30-minute
-        // RESET TIMER starts (this one runs on real wall-clock time, regardless of
-        // whether they're playing) - once that elapses, their allowance refills to a
-        // fresh 30 minutes. Admins are exempt entirely, and can also force-lock/unlock
-        // any player manually from the Leaderboard regardless of either timer.
-        const DEFAULT_PLAY_LIMIT_MS = 30 * 60 * 1000; // 30 minutes of active play allowed
-        const LOCK_RESET_DURATION_MS = 30 * 60 * 1000; // 30 minutes wall-clock to refill after locked
+        // Each registered player (and guest) gets a play window once they first
+        // click "Start Game". While now < limitExpiresAt, they're INSIDE that
+        // window and free to play. Once now passes limitExpiresAt, they're
+        // locked out of starting, continuing, or resuming any game until the
+        // admin grants them more time (there is no automatic reset - the admin
+        // is the only way out of a lock, by design, since this is a classroom tool).
+        const DEFAULT_PLAY_LIMIT_MS = 2 * 60 * 60 * 1000; // 2 hours
 
         // Returns the storage/lookup key used to identify this player's limit record.
         function getPlayLimitKey() {
             return isGuest ? currentGuestSessionId : currentPilot.toLowerCase();
         }
 
-        // Returns a unique storage key identifying the current player for stats like
-        // high score and streak. Uses the stable login email (lowercased) for registered
-        // users - NOT their display name, which can differ from their email and would
-        // cause a mismatch with how the Leaderboard looks scores up (it keys off email).
-        // Each guest gets their own key based on their unique session ID.
-        function getPlayerStatsKey() {
-            return isGuest ? `guest_${currentGuestSessionId}` : currentPilotEmail.toLowerCase();
-        }
-
         async function getAllPlayLimits() {
-            await syncCloudData(true); // silent - this runs frequently during gameplay
+            await syncCloudData(true); // silent - this runs on every Start Game click
             const saved = storage.getItem("starCollectorPlayLimits");
             if (saved) {
                 try {
@@ -1306,72 +1174,34 @@
             return {};
         }
 
-        // Returns a fresh default record for a player who has no existing record yet,
-        // or whose lock has already expired and is due for a refill.
-        function freshPlayRecord(displayName) {
-            return {
-                displayName: displayName,
-                remainingMs: DEFAULT_PLAY_LIMIT_MS,
-                lockExpiresAt: null,
-                adminLocked: false
-            };
-        }
-
-        // Reads the current record for this player, automatically refilling it if their
-        // wall-clock lock-reset timer has already elapsed. This is the single source of
-        // truth other functions should use instead of reading starCollectorPlayLimits directly.
-        async function getMyPlayRecord() {
-            const key = getPlayLimitKey();
-            if (!key) return null;
-
-            const allLimits = await getAllPlayLimits();
-            let record = allLimits[key];
-
-            if (!record) {
-                return null; // no record yet - treat as full allowance, handled by caller
-            }
-
-            // If they're locked (out of allowance) and NOT admin-locked, check whether
-            // the 30-minute wall-clock reset timer has elapsed - if so, refill them.
-            if (record.lockExpiresAt && !record.adminLocked) {
-                if (Date.now() >= new Date(record.lockExpiresAt).getTime()) {
-                    record = freshPlayRecord(record.displayName);
-                    allLimits[key] = record;
-                    await safeCloudUpdate("starCollectorPlayLimits", allLimits);
-                }
-            }
-
-            return record;
-        }
-
         // Checks whether the current player is currently locked out.
-        // Returns { locked: false } or { locked: true, adminLocked, resetsAt }.
+        // Returns { locked: false } or { locked: true }.
         async function checkPlayLimit() {
             if (isAdmin) return { locked: false }; // admins are never limited
 
-            const record = await getMyPlayRecord();
-            if (!record) return { locked: false };
+            const key = getPlayLimitKey();
+            if (!key) return { locked: false };
 
-            if (record.adminLocked) {
-                return { locked: true, adminLocked: true };
+            const allLimits = await getAllPlayLimits();
+            const record = allLimits[key];
+
+            if (!record || !record.limitExpiresAt) {
+                return { locked: false };
             }
 
-            if (record.lockExpiresAt && Date.now() < new Date(record.lockExpiresAt).getTime()) {
-                return { locked: true, resetsAt: new Date(record.lockExpiresAt) };
+            const expiresAt = new Date(record.limitExpiresAt);
+            if (Date.now() < expiresAt.getTime()) {
+                // Still within their granted window - free to play
+                return { locked: false };
             }
 
-            // Out of allowance but no active lock timer recorded yet (edge case) -
-            // treat as locked starting now, and persist that so the badge can show it.
-            if (typeof record.remainingMs === "number" && record.remainingMs <= 0 && !record.lockExpiresAt) {
-                return { locked: false }; // will be set properly on next deduction tick
-            }
-
-            return { locked: false };
+            // Window has passed - locked until the admin grants more time
+            return { locked: true };
         }
 
-        // Called once when a game actually starts (Start Game / Resume), to make sure
-        // a record exists. Does NOT consume any time by itself - the active gameplay
-        // timer (see startActivePlayDeduction) handles the actual countdown.
+        // Starts a fresh play window for the current player, ONLY if they don't
+        // already have an active one running (so repeated Start Game clicks during
+        // the same window don't keep pushing the expiry forward).
         async function ensurePlayWindowStarted() {
             if (isAdmin) return;
 
@@ -1379,291 +1209,23 @@
             if (!key) return;
 
             const allLimits = await getAllPlayLimits();
-            if (!allLimits[key]) {
-                allLimits[key] = freshPlayRecord(currentPilot);
-                await safeCloudUpdate("starCollectorPlayLimits", allLimits);
-            }
-        }
+            const existing = allLimits[key];
 
-        // --- ACTIVE PLAY DEDUCTION ---
-        // While a game is actually running, this periodically deducts elapsed time from
-        // the player's remaining allowance. If it hits zero mid-game, the game is stopped
-        // immediately and the player is locked out, starting their 30-minute reset timer.
-        let activePlayDeductionInterval = null;
-        const DEDUCTION_TICK_MS = 5000; // deduct in 5-second chunks while playing
+            const alreadyActive = existing && existing.limitExpiresAt && Date.now() < new Date(existing.limitExpiresAt).getTime();
+            if (alreadyActive) return; // window already running, don't touch it
 
-        function startActivePlayDeduction() {
-            stopActivePlayDeduction();
-            if (isAdmin) return;
-
-            activePlayDeductionInterval = setInterval(async () => {
-                const key = getPlayLimitKey();
-                if (!key) return;
-
-                const allLimits = await getAllPlayLimits();
-                let record = allLimits[key] || freshPlayRecord(currentPilot);
-
-                if (record.adminLocked) {
-                    // Admin force-locked them mid-game - stop immediately
-                    forceEndGameDueToLimit({ locked: true, adminLocked: true });
-                    return;
-                }
-
-                record.remainingMs = Math.max(0, (record.remainingMs ?? DEFAULT_PLAY_LIMIT_MS) - DEDUCTION_TICK_MS);
-
-                if (record.remainingMs <= 0 && !record.lockExpiresAt) {
-                    // Just ran out - start the 30-minute wall-clock reset timer now
-                    record.lockExpiresAt = new Date(Date.now() + LOCK_RESET_DURATION_MS).toISOString();
-                }
-
-                allLimits[key] = record;
-                await safeCloudUpdate("starCollectorPlayLimits", allLimits);
-
-                if (record.remainingMs <= 0) {
-                    forceEndGameDueToLimit({ locked: true, resetsAt: new Date(record.lockExpiresAt) });
-                }
-            }, DEDUCTION_TICK_MS);
-        }
-
-        function stopActivePlayDeduction() {
-            if (activePlayDeductionInterval) {
-                clearInterval(activePlayDeductionInterval);
-                activePlayDeductionInterval = null;
-            }
-        }
-
-        // Immediately stops active gameplay because the player's allowance just ran out
-        // (or an admin force-locked them mid-session), and shows the lockout message.
-        async function forceEndGameDueToLimit(limitStatus) {
-            stopActivePlayDeduction();
-            gameActive = false;
-            cancelAnimationFrame(animationId);
-            stopTimer();
-
-            statsDiv.style.display = "none";
-            canvas.style.display = "none";
-            controlsDiv.style.display = "none";
-            menu.style.display = "block";
-
-            settingsPanel.style.display = "none";
-            adminNotificationsPanel.style.display = "none";
-            leaderboardPanel.style.display = "none";
-            mainMenuPanel.style.display = "block";
-            updateURL("Home-Page");
-            startPlayTimeBadgeTicker();
-
-            await showInfo(buildLockoutMessage(limitStatus));
+            allLimits[key] = {
+                displayName: currentPilot,
+                limitStartedAt: new Date().toISOString(),
+                limitExpiresAt: new Date(Date.now() + DEFAULT_PLAY_LIMIT_MS).toISOString()
+            };
+            await safeCloudUpdate("starCollectorPlayLimits", allLimits);
         }
 
         // Formats a Date as a simple HH:MM time string for the lockout message.
         function formatTimeOnly(date) {
             return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         }
-
-        // Builds the right lockout message depending on whether this is a normal
-        // timed limit (auto-resets at a known time) or an admin-forced lock (stays
-        // locked indefinitely until the admin personally unlocks them).
-        function buildLockoutMessage(limitStatus) {
-            if (limitStatus.adminLocked) {
-                return "🔒 Your limit was ended by admin. Please wait until admin permits you to play the game / unlocks you.";
-            }
-            return `⏳ Your game play limit is reached and resets at ${formatTimeOnly(limitStatus.resetsAt)}.`;
-        }
-
-        // Formats milliseconds as "Xh Ym" / "Xm" for the remaining-allowance badge.
-        function formatDuration(ms) {
-            const totalMinutes = Math.ceil(ms / 60000);
-            const hours = Math.floor(totalMinutes / 60);
-            const minutes = totalMinutes % 60;
-            return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
-        }
-
-        // Updates the "⏱ Xm left" / locked badge on the home screen, so players get
-        // an early warning instead of being abruptly blocked when they click Start Game.
-        let playTimeBadgeInterval = null;
-
-        async function refreshPlayTimeBadge() {
-            if (isAdmin) {
-                playTimeRemainingBadge.style.display = "none";
-                return;
-            }
-
-            const key = getPlayLimitKey();
-            if (!key) {
-                playTimeRemainingBadge.style.display = "none";
-                return;
-            }
-
-            const record = await getMyPlayRecord();
-
-            if (!record) {
-                // No record yet - they have their full allowance, nothing urgent to show
-                playTimeRemainingBadge.style.display = "none";
-                return;
-            }
-
-            // Admin-forced lock: stays locked indefinitely until the admin unlocks them.
-            if (record.adminLocked) {
-                playTimeRemainingText.textContent = "🔒 Your limit was ended by admin. Please wait until admin permits you to play the game / unlocks you.";
-                playTimeRemainingBadge.classList.add("lb-time-warning");
-                playTimeRemainingBadge.style.display = "flex";
-                return;
-            }
-
-            // Currently locked out, waiting for the wall-clock reset timer
-            if (record.lockExpiresAt && Date.now() < new Date(record.lockExpiresAt).getTime()) {
-                playTimeRemainingText.textContent = `⏳ Limit reached - resets at ${formatTimeOnly(new Date(record.lockExpiresAt))}`;
-                playTimeRemainingBadge.classList.add("lb-time-warning");
-                playTimeRemainingBadge.style.display = "flex";
-                return;
-            }
-
-            // Otherwise, show their remaining active-play allowance
-            const remainingMs = typeof record.remainingMs === "number" ? record.remainingMs : DEFAULT_PLAY_LIMIT_MS;
-
-            if (remainingMs <= 0) {
-                // Edge case: out of time but no lock timer recorded - show as reached
-                playTimeRemainingText.textContent = "⏳ Limit reached";
-                playTimeRemainingBadge.classList.add("lb-time-warning");
-                playTimeRemainingBadge.style.display = "flex";
-                return;
-            }
-
-            playTimeRemainingText.textContent = `⏱ ${formatDuration(remainingMs)} remaining`;
-            // Show a warning color once under 5 minutes of allowance remain
-            const totalMinutes = Math.ceil(remainingMs / 60000);
-            if (totalMinutes <= 5) {
-                playTimeRemainingBadge.classList.add("lb-time-warning");
-            } else {
-                playTimeRemainingBadge.classList.remove("lb-time-warning");
-            }
-            playTimeRemainingBadge.style.display = "flex";
-        }
-
-        function startPlayTimeBadgeTicker() {
-            stopPlayTimeBadgeTicker();
-            refreshPlayTimeBadge();
-            playTimeBadgeInterval = setInterval(refreshPlayTimeBadge, 15000); // refresh every 15s
-        }
-
-        function stopPlayTimeBadgeTicker() {
-            if (playTimeBadgeInterval) {
-                clearInterval(playTimeBadgeInterval);
-                playTimeBadgeInterval = null;
-            }
-        }
-
-        // --- UNIVERSAL SEARCH ---
-        // A simple "command palette" style index: each entry has a label, keywords to
-        // match against, whether it requires admin access, and an action that navigates
-        // there. Typing "theme" or "dark mode" jumps straight to Game Settings, etc.
-        function getSearchIndex() {
-            return [
-                {
-                    label: "Game Settings",
-                    section: "Settings",
-                    keywords: ["settings", "game settings", "difficulty", "options"],
-                    adminOnly: false,
-                    action: () => settingsBtn.click()
-                },
-                {
-                    label: "Theme Mode (Dark / Light)",
-                    section: "Settings",
-                    keywords: ["theme", "theme mode", "dark mode", "light mode", "dark", "light", "appearance"],
-                    adminOnly: false,
-                    action: () => settingsBtn.click()
-                },
-                {
-                    label: "Difficulty",
-                    section: "Settings",
-                    keywords: ["difficulty", "easy", "medium", "hard"],
-                    adminOnly: false,
-                    action: () => settingsBtn.click()
-                },
-                {
-                    label: "Start Game",
-                    section: "Play",
-                    keywords: ["start", "start game", "play"],
-                    adminOnly: false,
-                    action: () => startBtn.click()
-                },
-                {
-                    label: "Missed Games",
-                    section: "Play",
-                    keywords: ["missed games", "missed", "continue", "resume", "saved games"],
-                    adminOnly: false,
-                    action: () => missedGamesBtn.click()
-                },
-                {
-                    label: "Log Out",
-                    section: "Account",
-                    keywords: ["log out", "logout", "sign out"],
-                    adminOnly: false,
-                    action: () => logoutBtn.click()
-                },
-                {
-                    label: "Admin Notifications",
-                    section: "Admin",
-                    keywords: ["admin notifications", "notifications", "requests", "signups", "pending"],
-                    adminOnly: true,
-                    action: () => adminNotificationsBtn.click()
-                },
-                {
-                    label: "Leaderboard",
-                    section: "Admin",
-                    keywords: ["leaderboard", "scores", "students", "high scores", "play limits", "limits"],
-                    adminOnly: true,
-                    action: () => leaderboardBtn.click()
-                }
-            ];
-        }
-
-        function runAppSearch(query) {
-            const trimmed = query.trim().toLowerCase();
-            appSearchResults.innerHTML = '';
-
-            if (!trimmed) {
-                appSearchResults.classList.remove("active");
-                return;
-            }
-
-            const index = getSearchIndex().filter(entry => !entry.adminOnly || isAdmin);
-            const matches = index.filter(entry =>
-                entry.label.toLowerCase().includes(trimmed) ||
-                entry.keywords.some(kw => kw.includes(trimmed))
-            );
-
-            if (matches.length === 0) {
-                appSearchResults.innerHTML = '<div class="search-no-results">No Data</div>';
-                appSearchResults.classList.add("active");
-                return;
-            }
-
-            matches.forEach((entry) => {
-                const item = document.createElement('div');
-                item.className = 'search-result-item';
-                item.innerHTML = `<span>${entry.label}</span><span class="search-result-section">${entry.section}</span>`;
-                item.addEventListener('click', () => {
-                    appSearchInput.value = '';
-                    appSearchResults.classList.remove('active');
-                    entry.action();
-                });
-                appSearchResults.appendChild(item);
-            });
-
-            appSearchResults.classList.add("active");
-        }
-
-        appSearchInput.addEventListener('input', () => {
-            runAppSearch(appSearchInput.value);
-        });
-
-        // Close the results dropdown if clicking elsewhere on the page
-        document.addEventListener('click', (e) => {
-            if (!appSearchInput.contains(e.target) && !appSearchResults.contains(e.target)) {
-                appSearchResults.classList.remove('active');
-            }
-        });
 
         // --- URL PATH SYNC ---
         // Updates the browser's address bar to reflect the current screen, without reloading the page.
@@ -2293,7 +1855,6 @@
                     // User exists in approved list
                     if (users[lowerUsername].password === password) {
                         currentPilot = users[lowerUsername].originalName;
-                        currentPilotEmail = lowerUsername;
                         isGuest = false;
                         isAdmin = false;
                         enterMainDashboard();
@@ -2551,7 +2112,6 @@
             if (!confirmed) return;
 
             currentPilot = "";
-            currentPilotEmail = "";
             isGuest = false;
             isAdmin = false;
             lastNotificationCount = 0;
@@ -2559,8 +2119,6 @@
             
             // Stop notification polling
             stopAdminNotificationPolling();
-            stopPlayTimeBadgeTicker();
-            stopActivePlayDeduction();
             
             // Toggle panels
             mainMenuPanel.style.display = "none";
@@ -2853,7 +2411,7 @@
 
         // --- LEADERBOARD (ADMIN ONLY) ---
         async function loadLeaderboard() {
-            // Pull the latest users, guests, high scores, and play limits from the cloud first
+            // Pull the latest users, high scores, and play limits from the cloud first
             await syncCloudData();
 
             let users = {};
@@ -2862,192 +2420,127 @@
                 try { users = JSON.parse(savedUsers); } catch (e) { users = {}; }
             }
 
-            let approvedGuests = [];
-            const savedApproved = storage.getItem("starCollectorApprovedGuests");
-            if (savedApproved) {
-                try { approvedGuests = JSON.parse(savedApproved); } catch (e) { approvedGuests = []; }
+            const usernames = Object.keys(users);
+
+            if (usernames.length === 0) {
+                leaderboardList.innerHTML = '<div class="lb-empty">✨ No approved students yet.</div>';
+                return;
             }
 
             const allLimits = await getAllPlayLimits();
 
-            // Build one unified list of entries, each tagged with how to look up their
-            // stats and how to delete them later (registered user vs. guest differ).
-            const entries = [];
-
-            Object.keys(users).forEach((username) => {
+            leaderboardList.innerHTML = '';
+            usernames.forEach((username) => {
                 const userInfo = users[username];
                 const displayName = userInfo.originalName || userInfo.fullName || username;
+
                 const scoreKey = `starCollectorHighScore_${username}`;
                 const savedScore = storage.getItem(scoreKey);
                 const highScore = (savedScore !== null && !isNaN(savedScore)) ? parseInt(savedScore, 10) : 0;
 
-                entries.push({
-                    type: "user",
-                    lookupKey: username,
-                    displayName: displayName,
-                    highScore: highScore,
-                    limitRecord: allLimits[username]
-                });
-            });
-
-            approvedGuests.forEach((guest) => {
-                const statsKey = `guest_${guest.sessionId}`;
-                const scoreKey = `starCollectorHighScore_${statsKey}`;
-                const savedScore = storage.getItem(scoreKey);
-                const highScore = (savedScore !== null && !isNaN(savedScore)) ? parseInt(savedScore, 10) : 0;
-                const displayName = `${guest.fullName || 'Guest'} (Guest)`;
-
-                entries.push({
-                    type: "guest",
-                    lookupKey: guest.sessionId,
-                    displayName: displayName,
-                    highScore: highScore,
-                    limitRecord: allLimits[guest.sessionId]
-                });
-            });
-
-            if (entries.length === 0) {
-                leaderboardList.innerHTML = '<div class="lb-empty">✨ No approved students or guests yet.</div>';
-                return;
-            }
-
-            // Sort by high score, highest first - this is what actually makes it a "leaderboard"
-            entries.sort((a, b) => b.highScore - a.highScore);
-
-            leaderboardList.innerHTML = '';
-            entries.forEach((entry) => {
-                const safeName = entry.displayName.replace(/'/g, "\\'");
-                const record = entry.limitRecord;
-                const isTimedLock = record && record.lockExpiresAt && !record.adminLocked && Date.now() < new Date(record.lockExpiresAt).getTime();
-                const isAdminLock = record && record.adminLocked;
+                const limitRecord = allLimits[username];
+                // A student is currently free to play while now < limitExpiresAt
+                // (still inside their granted window). Once that time passes,
+                // they're locked out until the admin grants more time.
+                const hasActiveWindow = limitRecord && limitRecord.limitExpiresAt && Date.now() < new Date(limitRecord.limitExpiresAt).getTime();
+                const isLocked = limitRecord && limitRecord.limitExpiresAt && !hasActiveWindow;
 
                 let statusHTML;
-                if (isAdminLock) {
-                    statusHTML = `<span class="lb-status-locked">🔒 Locked by admin</span>
-                        <button class="lb-mini-btn lb-mini-unlock" onclick="adminUnlockPlayer('${entry.lookupKey}', '${safeName}')">🔓 Unlock</button>`;
-                } else if (isTimedLock) {
-                    const resetTime = formatTimeOnly(new Date(record.lockExpiresAt));
-                    statusHTML = `<span class="lb-status-locked">🚮 Reached (resets ${resetTime})</span>
-                        <button class="lb-mini-btn lb-mini-extend" onclick="extendPlayerLimit('${entry.lookupKey}', '${safeName}', '${entry.type}')">⏰ Extend</button>
-                        <button class="lb-mini-btn lb-mini-lock" onclick="forceLockPlayer('${entry.lookupKey}', '${safeName}')">OK</button>`;
+                if (isLocked) {
+                    statusHTML = `<span class="lb-status-locked" onclick="extendPlayerLimit('${username}', '${displayName.replace(/'/g, "\\'")}')">🚮 Reached - tap to grant time</span>`;
                 } else {
-                    // Not locked - show their remaining active-play allowance if known
-                    const remainingMs = record && typeof record.remainingMs === "number" ? record.remainingMs : DEFAULT_PLAY_LIMIT_MS;
-                    statusHTML = `<span class="lb-status-ok">✅ OK (${formatDuration(remainingMs)} left)</span>
-                        <button class="lb-mini-btn lb-mini-lock" onclick="forceLockPlayer('${entry.lookupKey}', '${safeName}')">🔒 Lock</button>`;
+                    statusHTML = `<span class="lb-status-ok">✅ OK</span>`;
                 }
 
                 const rowDiv = document.createElement('div');
                 rowDiv.className = 'leaderboard-row';
                 rowDiv.innerHTML = `
-                    <span class="lb-col-name">${entry.displayName}</span>
-                    <span class="lb-col-score">${entry.highScore}</span>
+                    <span class="lb-col-name">${displayName}</span>
+                    <span class="lb-col-score">${highScore}</span>
                     <span class="lb-col-status">${statusHTML}</span>
                     <span class="lb-col-action">
-                        <button class="lb-delete-btn" onclick="deleteLeaderboardAccount('${entry.lookupKey}', '${safeName}', '${entry.type}')" title="Delete account">🚮</button>
+                        <button class="lb-delete-btn" onclick="forceLockPlayer('${username}', '${displayName.replace(/'/g, "\\'")}')" title="Force lock student">🔒</button>
+                        <button class="lb-delete-btn" onclick="deleteLeaderboardAccount('${username}', '${displayName.replace(/'/g, "\\'")}')" title="Delete account">🚮</button>
                     </span>
                 `;
                 leaderboardList.appendChild(rowDiv);
             });
         }
 
-        // Admin clicks the locked status text to grant extra time immediately,
-        // instead of waiting for the automatic 2-hour reset.
-        async function extendPlayerLimit(lookupKey, displayName, type) {
+        // Admin clicks the locked status text to grant extra time immediately.
+        // This pushes the student's window into the future, which unlocks them
+        // right away (since they become "inside the window" again).
+        async function extendPlayerLimit(username, displayName) {
             const grantedMs = await showTimeInput(
-                "Grant extra play time",
-                `How much active play allowance should "${displayName}" get? (enter hours and/or minutes)`
+                "Grant extra time",
+                `How much extra time should "${displayName}" get? (enter hours and/or minutes)`
             );
             if (!grantedMs) return; // cancelled or entered nothing
 
             const allLimits = await getAllPlayLimits();
 
-            // Grant a fresh active-play allowance of exactly the custom duration the
-            // admin specified, clearing any existing lock so they can play immediately.
-            allLimits[lookupKey] = {
+            // Grant a fresh window of exactly the custom duration the admin specified,
+            // starting from right now. This immediately unlocks the student.
+            allLimits[username] = {
                 displayName: displayName,
-                remainingMs: grantedMs,
-                lockExpiresAt: null,
-                adminLocked: false
+                limitStartedAt: new Date().toISOString(),
+                limitExpiresAt: new Date(Date.now() + grantedMs).toISOString()
             };
             await safeCloudUpdate("starCollectorPlayLimits", allLimits);
 
             loadLeaderboard();
-            await showInfo(`✅ "${displayName}" has been granted ${formatDuration(grantedMs)} of play time.`);
+            const hours = Math.floor(grantedMs / (60 * 60 * 1000));
+            const minutes = Math.round((grantedMs % (60 * 60 * 1000)) / (60 * 1000));
+            const durationText = [hours > 0 ? `${hours}h` : '', minutes > 0 ? `${minutes}m` : ''].filter(Boolean).join(' ');
+            await showInfo(`✅ "${displayName}" has been granted ${durationText} of play time and is unlocked now.`);
         }
 
-        // Admin clicks "OK" on an already-timed-out player to convert their lock into
-        // a permanent admin lock - it no longer auto-resets, and the player sees a
-        // message telling them the admin ended it and they must wait to be unlocked.
-        async function forceLockPlayer(lookupKey, displayName) {
+        // Immediately locks a student out of starting/resuming any game, regardless
+        // of how much time they have left on their current window. Marks their
+        // window as already-expired so checkPlayLimit blocks them right away.
+        // They stay locked until the admin grants them more time.
+        async function forceLockPlayer(username, displayName) {
             const confirmed = await showConfirm(
-                "Lock this player?",
-                `End "${displayName}"'s limit and keep them locked until you personally unlock them? They will NOT be able to play until you unlock them.`
+                "Lock this student?",
+                `Immediately lock "${displayName}" out of the game? They won't be able to play until you grant them time again.`
             );
             if (!confirmed) return;
 
             const allLimits = await getAllPlayLimits();
-            allLimits[lookupKey] = {
+            allLimits[username] = {
                 displayName: displayName,
-                adminLocked: true,
-                lockedAt: new Date().toISOString()
+                limitStartedAt: new Date().toISOString(),
+                limitExpiresAt: new Date(Date.now() - 1000).toISOString() // already in the past = locked now
             };
             await safeCloudUpdate("starCollectorPlayLimits", allLimits);
 
             loadLeaderboard();
-            await showInfo(`🔒 "${displayName}" is now locked until you unlock them.`);
-        }
-
-        // Admin unlocks a player who was placed under an admin-forced lock.
-        async function adminUnlockPlayer(lookupKey, displayName) {
-            const confirmed = await showConfirm(
-                "Unlock this player?",
-                `Allow "${displayName}" to play again?`
-            );
-            if (!confirmed) return;
-
-            const allLimits = await getAllPlayLimits();
-            delete allLimits[lookupKey];
-            await safeCloudUpdate("starCollectorPlayLimits", allLimits);
-
-            loadLeaderboard();
-            await showInfo(`🔓 "${displayName}" has been unlocked and can play again.`);
+            await showInfo(`🔒 "${displayName}" has been locked out.`);
         }
 
         // Deletes a student's account entirely: removes them from approved users
         // and clears their play limit record. Uses the custom confirmation modal,
         // exactly as requested: "Are you sure you want to delete this account?"
-        async function deleteLeaderboardAccount(lookupKey, displayName, type) {
+        async function deleteLeaderboardAccount(username, displayName) {
             const confirmed = await showConfirm(
                 "Delete this account?",
-                `Are you sure you want to delete this account? "${displayName}" will be permanently removed${type === "user" ? " and will need to sign up again" : ""}.`
+                `Are you sure you want to delete this account? "${displayName}" will be permanently removed and will need to sign up again.`
             );
             if (!confirmed) return;
 
             await syncCloudData();
-
-            if (type === "guest") {
-                let approvedGuests = [];
-                const savedApproved = storage.getItem("starCollectorApprovedGuests");
-                if (savedApproved) {
-                    try { approvedGuests = JSON.parse(savedApproved); } catch (e) { approvedGuests = []; }
-                }
-                approvedGuests = approvedGuests.filter(g => g.sessionId !== lookupKey);
-                await safeCloudUpdate("starCollectorApprovedGuests", approvedGuests);
-            } else {
-                let users = {};
-                const savedUsers = storage.getItem("starCollectorUsers");
-                if (savedUsers) {
-                    try { users = JSON.parse(savedUsers); } catch (e) { users = {}; }
-                }
-                delete users[lookupKey];
-                await safeCloudUpdate("starCollectorUsers", users);
+            let users = {};
+            const savedUsers = storage.getItem("starCollectorUsers");
+            if (savedUsers) {
+                try { users = JSON.parse(savedUsers); } catch (e) { users = {}; }
             }
+            delete users[username];
+            await safeCloudUpdate("starCollectorUsers", users);
 
             // Also clean up their play limit record, if any
             const allLimits = await getAllPlayLimits();
-            if (allLimits[lookupKey]) {
-                delete allLimits[lookupKey];
+            if (allLimits[username]) {
+                delete allLimits[username];
                 await safeCloudUpdate("starCollectorPlayLimits", allLimits);
             }
 
@@ -3119,8 +2612,8 @@
 
             // Load Streak System 
             const todayDateString = new Date().toDateString(); 
-            const streakKey = `starCollectorStreak_${getPlayerStatsKey()}`;
-            const lastPlayedKey = `starCollectorLastDate_${getPlayerStatsKey()}`;
+            const streakKey = isGuest ? "starCollectorStreak_guest" : `starCollectorStreak_${currentPilot.toLowerCase()}`;
+            const lastPlayedKey = isGuest ? "starCollectorLastDate_guest" : `starCollectorLastDate_${currentPilot.toLowerCase()}`;
 
             const savedStreak = storage.getItem(streakKey);
             if (savedStreak !== null && !isNaN(savedStreak) && savedStreak !== "") {
@@ -3131,7 +2624,7 @@
             streakText.textContent = playStreak;
 
             // Load High Score for current authorized user
-            const scoreKey = `starCollectorHighScore_${getPlayerStatsKey()}`;
+            const scoreKey = isGuest ? "starCollectorHighScore_guest" : `starCollectorHighScore_${currentPilot.toLowerCase()}`;
             const savedHighScore = storage.getItem(scoreKey);
             if (savedHighScore !== null && !isNaN(savedHighScore) && savedHighScore !== "") {
                 highScore = parseInt(savedHighScore, 10);
@@ -3142,13 +2635,6 @@
 
             // Load Missed Games count for current user
             updateMissedGamesCount();
-
-            // Make sure any leftover active-play deduction timer from a previous
-            // session isn't still running now that we're on the home screen
-            stopActivePlayDeduction();
-
-            // Start the play-time-remaining badge ticker (no-op for admins)
-            startPlayTimeBadgeTicker();
         }
 
         // --- MISSED GAMES SYSTEM ---
@@ -3231,12 +2717,10 @@
         async function resumeMissedGame(index) {
             const limitStatus = await checkPlayLimit();
             if (limitStatus.locked) {
-                await showInfo(buildLockoutMessage(limitStatus));
+                await showInfo(`⏳ Your play time limit has been reached. Ask your admin to grant you more time.`);
                 return;
             }
             await ensurePlayWindowStarted();
-            stopPlayTimeBadgeTicker();
-            startActivePlayDeduction();
 
             let missedGames = getMissedGames();
             if (index < 0 || index >= missedGames.length) return;
@@ -3335,7 +2819,6 @@
             gameActive = false;
             cancelAnimationFrame(animationId);
             stopTimer();
-            stopActivePlayDeduction();
 
             statsDiv.style.display = "none";
             canvas.style.display = "none";
@@ -3348,7 +2831,6 @@
             leaderboardPanel.style.display = "none";
             mainMenuPanel.style.display = "block";
             updateURL("Home-Page");
-            startPlayTimeBadgeTicker();
 
             await showInfo("💾 Progress saved! You can see it under Missed Games.");
         });
@@ -3414,22 +2896,11 @@
                     users = {};
                 }
             }
+            const lowerPilot = saved.currentPilot.toLowerCase();
+            const stillExists = Object.values(users).some(u => u.originalName && u.originalName.toLowerCase() === lowerPilot);
 
-            // Prefer looking the account up by the saved email key directly (reliable),
-            // falling back to matching by display name only for older saved sessions
-            // that predate this fix and don't have an email stored yet.
-            let matchedEmail = saved.currentPilotEmail && users[saved.currentPilotEmail] ? saved.currentPilotEmail : null;
-            if (!matchedEmail) {
-                const lowerPilot = saved.currentPilot.toLowerCase();
-                matchedEmail = Object.keys(users).find(email => {
-                    const u = users[email];
-                    return u.originalName && u.originalName.toLowerCase() === lowerPilot;
-                }) || null;
-            }
-
-            if (matchedEmail) {
-                currentPilot = users[matchedEmail].originalName;
-                currentPilotEmail = matchedEmail;
+            if (stillExists) {
+                currentPilot = saved.currentPilot;
                 isGuest = false;
                 isAdmin = false;
                 enterMainDashboard();
@@ -3567,12 +3038,10 @@
         startBtn.addEventListener("click", async function() {
             const limitStatus = await checkPlayLimit();
             if (limitStatus.locked) {
-                await showInfo(buildLockoutMessage(limitStatus));
+                await showInfo(`⏳ Your play time limit has been reached. Ask your admin to grant you more time.`);
                 return;
             }
             await ensurePlayWindowStarted();
-            stopPlayTimeBadgeTicker();
-            startActivePlayDeduction();
 
             const difficulty = difficultySelect.value;
 
@@ -3593,8 +3062,8 @@
 
             // --- STREAK VALIDATION ENGINE ---
             const todayDateString = new Date().toDateString(); 
-            const streakKey = `starCollectorStreak_${getPlayerStatsKey()}`;
-            const lastPlayedKey = `starCollectorLastDate_${getPlayerStatsKey()}`;
+            const streakKey = isGuest ? "starCollectorStreak_guest" : `starCollectorStreak_${currentPilot.toLowerCase()}`;
+            const lastPlayedKey = isGuest ? "starCollectorLastDate_guest" : `starCollectorLastDate_${currentPilot.toLowerCase()}`;
             const lastPlayedDate = storage.getItem(lastPlayedKey);
 
             if (lastPlayedDate !== todayDateString) {
@@ -3641,7 +3110,7 @@
                 if (score > highScore) {
                     highScore = score;
                     highScoreText.textContent = highScore;
-                    const scoreKey = `starCollectorHighScore_${getPlayerStatsKey()}`;
+                    const scoreKey = isGuest ? "starCollectorHighScore_guest" : `starCollectorHighScore_${currentPilot.toLowerCase()}`;
                     storage.setItem(scoreKey, highScore);
                 }
 
@@ -3691,7 +3160,6 @@
             
             // Turn off timer
             stopTimer();
-            stopActivePlayDeduction();
 
             statsDiv.style.display = "none";
             canvas.style.display = "none";
@@ -3704,7 +3172,6 @@
             leaderboardPanel.style.display = "none";
             mainMenuPanel.style.display = "block";
             updateURL("Home-Page");
-            startPlayTimeBadgeTicker();
         });
     </script>
 
