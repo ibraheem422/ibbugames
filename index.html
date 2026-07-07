@@ -813,6 +813,17 @@
 
     <div class="wrapper">
         <!-- Logo Section with Smart Fallback -->
+        <script>
+            // Defined here (not in the main script block near the bottom of the page)
+            // because logo.png can fail to load and fire onerror before the browser
+            // even reaches that later script - causing a "not defined" error.
+            function handleLogoError() {
+                const logoContainer = document.querySelector('.logo-container');
+                if (logoContainer) {
+                    logoContainer.innerHTML = '<div class="fallback-logo">⭐</div>';
+                }
+            }
+        </script>
         <div class="logo-container">
             <img id="logoImg" src="logo.png" alt="Game Logo" class="site-logo" onerror="handleLogoError()">
         </div>
@@ -1913,7 +1924,8 @@
             cachedBinDataAt = 0;
         }
 
-        const SYNC_INTERVAL = 2000; // 2 seconds for faster sync
+        const SYNC_INTERVAL = 5000; // 5 seconds - minimum gap between cloud syncs,
+                                     // to protect the free-tier request quota
 
         // Initialize cloud storage with fallback
         async function initializeCloudStorage() {
@@ -2180,7 +2192,8 @@
 
             adminNotificationPollingInterval = setInterval(() => {
                 checkAndUpdateNotifications();
-            }, 2000); // Check every 2 seconds
+            }, 15000); // Check every 15 seconds (was 2s - that alone could burn through
+                       // a free JSONBin quota in under a day with the admin panel open)
         }
 
         function checkAndUpdateNotifications() {
@@ -2670,10 +2683,11 @@
             guestWaitingPanel.style.display = "block";
             guestApprovalStatus.textContent = "Pending...";
 
-            // Auto-check status every 2 seconds
+            // Auto-check status every 8 seconds (was 2s - reduced to conserve
+            // JSONBin's free-tier request quota; still responsive enough while waiting)
             const autoCheckInterval = setInterval(() => {
                 checkGuestApprovalStatus(autoCheckInterval);
-            }, 2000);
+            }, 8000);
 
             // Store interval ID for later cancellation
             window.guestCheckInterval = autoCheckInterval;
@@ -3692,12 +3706,6 @@
             document.documentElement.setAttribute("data-theme", selectedTheme);
             storage.setItem("starCollectorTheme", selectedTheme);
         });
-
-        // Smart Logo Fallback Handler
-        function handleLogoError() {
-            const logoContainer = document.querySelector('.logo-container');
-            logoContainer.innerHTML = '<div class="fallback-logo">⭐</div>';
-        }
 
         // Star physics properties
         let starX = canvas.width / 2;
