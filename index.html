@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Star Collector game</title>
+    <title>Star Collector</title>
     <!-- URL-Encoded SVG Favicon to ensure the golden star emoji displays in the browser tab -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E⭐%3C/text%3E%3C/svg%3E">
     <style>
@@ -1135,7 +1135,7 @@
                 <button id="resetLevelBtn" class="control-btn">Reset Level</button>
                 <button id="resetBothBtn" class="control-btn" style="grid-column: span 2;">Reset Score & Level</button>
             </div>
-            <button id="saveExitBtn" class="control-btn" style="background-color: #5cb85c; margin-bottom: 10px;">💾 Save & Exit</button>
+            <button id="saveExitBtn" class="control-btn" style="background-color: #5cb85c; margin-bottom: 10px;">Save and exit game</button>
             <button id="endGameBtn" class="control-btn">End Game</button>
         </div>
     </div>
@@ -1146,8 +1146,8 @@
             <h3 id="confirmModalTitle">Are you sure?</h3>
             <p id="confirmModalMessage">Please confirm this action.</p>
             <div id="confirmModalActions">
-                <button id="confirmModalYes" class="accept-btn">✅ Yes</button>
-                <button id="confirmModalNo" class="decline-btn">❌ Cancel</button>
+                <button id="confirmModalYes" class="accept-btn">✅ Yes Confirm</button>
+                <button id="confirmModalNo" class="decline-btn">❌ Cancel No</button>
             </div>
         </div>
     </div>
@@ -2182,27 +2182,15 @@
         }
 
         // Auto-polling for admin notifications
+        // No automatic polling - checks only happen when the admin manually clicks
+        // "Check for New Requests" to conserve JSONBin free-tier request quota.
         function startAdminNotificationPolling() {
-            if (adminNotificationPollingInterval) {
-                clearInterval(adminNotificationPollingInterval);
-            }
-
-            // Check immediately when polling starts
-            checkAndUpdateNotifications();
-
-            adminNotificationPollingInterval = setInterval(() => {
-                checkAndUpdateNotifications();
-            }, 15000); // Check every 15 seconds (was 2s - that alone could burn through
-                       // a free JSONBin quota in under a day with the admin panel open)
+            // Intentionally empty - polling removed to save API requests
         }
 
         function checkAndUpdateNotifications() {
-            if (!isAdmin) {
-                return;
-            }
+            if (!isAdmin) return;
 
-            // Sync from cloud first (get latest data from JSONBin) - silent so the
-            // sync indicator doesn't flicker on every 2-second background poll
             syncCloudData(true).then(() => {
                 let pendingSignups = [];
                 const savedPending = storage.getItem("starCollectorPendingSignups");
@@ -2215,22 +2203,14 @@
                 }
 
                 const currentCount = pendingSignups.length;
-                
-                // Update notification count
                 notificationCount.textContent = currentCount;
 
-                console.log(`[Admin Polling] Current notifications: ${currentCount}, Last: ${lastNotificationCount}`);
-
-                // New notification arrived!
                 if (currentCount > lastNotificationCount && currentCount > 0) {
-                    console.log(`[Admin Alert] New notification detected! ${currentCount} total`);
                     lastNotificationCount = currentCount;
                     playNotificationSound();
                     showBrowserNotification("⭐ New Admin Request", {
                         body: `You have ${currentCount} pending request(s) to review!`
                     });
-                    
-                    // Add pulse animation to badge
                     notificationCount.classList.add("new-notification");
                     setTimeout(() => {
                         notificationCount.classList.remove("new-notification");
@@ -2683,14 +2663,8 @@
             guestWaitingPanel.style.display = "block";
             guestApprovalStatus.textContent = "Pending...";
 
-            // Auto-check status every 8 seconds (was 2s - reduced to conserve
-            // JSONBin's free-tier request quota; still responsive enough while waiting)
-            const autoCheckInterval = setInterval(() => {
-                checkGuestApprovalStatus(autoCheckInterval);
-            }, 8000);
-
-            // Store interval ID for later cancellation
-            window.guestCheckInterval = autoCheckInterval;
+            // No auto-polling - guest must click "Check Status" manually to conserve
+            // JSONBin API quota. The button is clearly visible on the waiting screen.
         });
 
         // Check Guest Approval Status
