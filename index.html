@@ -1135,7 +1135,7 @@
                 <button id="resetLevelBtn" class="control-btn">Reset Level</button>
                 <button id="resetBothBtn" class="control-btn" style="grid-column: span 2;">Reset Score & Level</button>
             </div>
-            <button id="saveExitBtn" class="control-btn" style="background-color: #5cb85c; margin-bottom: 10px;">Save and exit game</button>
+            <button id="saveExitBtn" class="control-btn" style="background-color: #5cb85c; margin-bottom: 10px;">💾 Save & Exit</button>
             <button id="endGameBtn" class="control-btn">End Game</button>
         </div>
     </div>
@@ -1146,8 +1146,8 @@
             <h3 id="confirmModalTitle">Are you sure?</h3>
             <p id="confirmModalMessage">Please confirm this action.</p>
             <div id="confirmModalActions">
-                <button id="confirmModalYes" class="accept-btn">✅ Yes Confirm</button>
-                <button id="confirmModalNo" class="decline-btn">❌ Cancel No</button>
+                <button id="confirmModalYes" class="accept-btn">✅ Yes</button>
+                <button id="confirmModalNo" class="decline-btn">❌ Cancel</button>
             </div>
         </div>
     </div>
@@ -1489,11 +1489,15 @@
                 const key = getPlayLimitKey();
                 if (!key) return;
 
-                const allLimits = await getAllPlayLimits();
+                // Read from localStorage only (no cloud fetch every 5s)
+                const saved = storage.getItem("starCollectorPlayLimits");
+                let allLimits = {};
+                if (saved) {
+                    try { allLimits = JSON.parse(saved); } catch (e) { allLimits = {}; }
+                }
                 let record = allLimits[key] || freshPlayRecord(currentPilot);
 
                 if (record.adminLocked) {
-                    // Admin force-locked them mid-game - stop immediately
                     forceEndGameDueToLimit({ locked: true, adminLocked: true });
                     return;
                 }
@@ -1501,16 +1505,21 @@
                 record.remainingMs = Math.max(0, (record.remainingMs ?? DEFAULT_PLAY_LIMIT_MS) - DEDUCTION_TICK_MS);
 
                 if (record.remainingMs <= 0 && !record.lockExpiresAt) {
-                    // Just ran out - start the 30-minute wall-clock reset timer now
                     record.lockExpiresAt = new Date(Date.now() + LOCK_RESET_DURATION_MS).toISOString();
                 }
 
                 allLimits[key] = record;
-                await safeCloudUpdate("starCollectorPlayLimits", allLimits);
+
+                // Write to localStorage every tick (free, instant)
+                storage.setItem("starCollectorPlayLimits", JSON.stringify(allLimits));
 
                 if (record.remainingMs <= 0) {
+                    // Limit just hit - sync to cloud NOW so other devices see it,
+                    // but only this one time (not every 5 seconds during normal play)
+                    await safeCloudUpdate("starCollectorPlayLimits", allLimits);
                     forceEndGameDueToLimit({ locked: true, resetsAt: new Date(record.lockExpiresAt) });
                 }
+                // Normal deduction: localStorage only, no JSONBin call
             }, DEDUCTION_TICK_MS);
         }
 
@@ -1583,7 +1592,16 @@
                 return;
             }
 
-            const record = await getMyPlayRecord();
+            // Read from localStorage only — no cloud fetch here.
+            // The active-play deduction already writes updated remainingMs to
+            // localStorage every 5 seconds during gameplay, so this is accurate
+            // enough without burning JSONBin quota on every badge refresh.
+            const saved = storage.getItem("starCollectorPlayLimits");
+            let allLimits = {};
+            if (saved) {
+                try { allLimits = JSON.parse(saved); } catch (e) { allLimits = {}; }
+            }
+            const record = allLimits[key] || null;
 
             if (!record) {
                 // No record yet - they have their full allowance, nothing urgent to show
@@ -2313,15 +2331,23 @@
                 return;
             }
 
-            // Retrieve registered users database (sync from cloud first to get latest)
-            await syncCloudData();
+            // Force a fresh fetch from cloud before checking credentials - this is
+            // critical for cross-device login: without this, D2 reads a stale local
+            // cache that doesn't have accounts approved on D1 yet, causing a false
+            // "invalid alias" error even though the account exists in the cloud.
+            displayAuthMessage("🔄 Checking...", true);
             let users = {};
-            const savedUsers = storage.getItem("starCollectorUsers");
-            if (savedUsers) {
-                try {
-                    users = JSON.parse(savedUsers);
-                } catch (e) {
-                    users = {};
+            try {
+                const freshData = await fetchFullBin(true); // forceFresh=true bypasses throttle
+                const freshUsers = freshData.starCollectorUsers || {};
+                storage.setItem("starCollectorUsers", JSON.stringify(freshUsers));
+                users = freshUsers;
+            } catch (e) {
+                // Fallback to local cache if cloud unreachable
+                console.warn("[Login] Could not fetch fresh users, falling back to cache:", e.message);
+                const savedUsers = storage.getItem("starCollectorUsers");
+                if (savedUsers) {
+                    try { users = JSON.parse(savedUsers); } catch (e2) { users = {}; }
                 }
             }
 
@@ -3572,6 +3598,15 @@
             stopTimer();
             stopActivePlayDeduction();
 
+            // Sync the updated remainingMs to cloud now that the game ended cleanly,
+            // so the leaderboard on other devices shows the correct remaining time.
+            const savedLimits = storage.getItem("starCollectorPlayLimits");
+            if (savedLimits && !isAdmin) {
+                try {
+                    safeCloudUpdate("starCollectorPlayLimits", JSON.parse(savedLimits));
+                } catch (e) { /* ignore */ }
+            }
+
             statsDiv.style.display = "none";
             canvas.style.display = "none";
             controlsDiv.style.display = "none";
@@ -3921,6 +3956,14 @@
             // Turn off timer
             stopTimer();
             stopActivePlayDeduction();
+
+            // Sync updated remainingMs to cloud on clean exit
+            const savedLimitsEG = storage.getItem("starCollectorPlayLimits");
+            if (savedLimitsEG && !isAdmin) {
+                try {
+                    safeCloudUpdate("starCollectorPlayLimits", JSON.parse(savedLimitsEG));
+                } catch (e) { /* ignore */ }
+            }
 
             statsDiv.style.display = "none";
             canvas.style.display = "none";
