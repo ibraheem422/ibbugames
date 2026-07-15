@@ -910,6 +910,10 @@
             <div id="leaderboardPanel">
                 <h2 style="margin-top: 0; color: #FFD700; font-size: 24px; border-bottom: 2px solid var(--border-color); padding-bottom: 8px; margin-bottom: 20px;">🏆 Leaderboard</h2>
 
+                <div class="menu-element" style="margin-bottom: 15px;">
+                    <button id="leaderboardRefreshBtn" class="secondary-btn" style="background-color: #5cb85c; font-size: 14px; padding: 8px 12px;">🔄 Refresh Leaderboard</button>
+                </div>
+
                 <div class="leaderboard-header-row">
                     <span class="lb-col-name">Student Name</span>
                     <span class="lb-col-score">High Score</span>
@@ -1295,6 +1299,51 @@
         let isAdmin = false;
         let currentGuestSessionId = null;
         let authMode = "login"; // "login" or "signup"
+
+        // --- LOGIN LOCKOUT ---
+        // After 5 failed login attempts, the login button is disabled for 30 seconds.
+        // State lives in memory only (resets on page reload - intentional, since a
+        // determined attacker would just reload anyway, so this is purely UX-level
+        // protection against casual brute-forcing).
+        let loginFailCount = 0;
+        let loginLockedUntil = 0;
+        let loginLockCountdownInterval = null;
+        const MAX_LOGIN_FAILS = 5;
+        const LOGIN_LOCK_DURATION_MS = 30000; // 30 seconds
+
+        function isLoginLocked() {
+            return Date.now() < loginLockedUntil;
+        }
+
+        function startLoginLockCountdown() {
+            if (loginLockCountdownInterval) clearInterval(loginLockCountdownInterval);
+            authSubmitBtn.disabled = true;
+
+            loginLockCountdownInterval = setInterval(() => {
+                const remaining = Math.ceil((loginLockedUntil - Date.now()) / 1000);
+                if (remaining <= 0) {
+                    clearInterval(loginLockCountdownInterval);
+                    loginLockCountdownInterval = null;
+                    authSubmitBtn.disabled = false;
+                    loginFailCount = 0;
+                    displayAuthMessage(`🔓 You can try again now.`);
+                } else {
+                    displayAuthMessage(`🔒 Too many failed attempts. Try again in ${remaining}s.`);
+                }
+            }, 1000);
+        }
+
+        function recordFailedLogin() {
+            loginFailCount++;
+            if (loginFailCount >= MAX_LOGIN_FAILS) {
+                loginLockedUntil = Date.now() + LOGIN_LOCK_DURATION_MS;
+                startLoginLockCountdown();
+            } else {
+                const remaining = MAX_LOGIN_FAILS - loginFailCount;
+                displayAuthMessage(`❌ Invalid credentials. ${remaining} attempt${remaining === 1 ? "" : "s"} remaining before lockout.`);
+            }
+        }
+
         
         // Notification polling variables
         let adminNotificationPollingInterval = null;
@@ -2300,6 +2349,13 @@
 
         // Submit credentials
         authSubmitBtn.addEventListener("click", async () => {
+            // Block login attempts during lockout period
+            if (authMode === "login" && isLoginLocked()) {
+                const remaining = Math.ceil((loginLockedUntil - Date.now()) / 1000);
+                displayAuthMessage(`🔒 Too many failed attempts. Try again in ${remaining}s.`);
+                return;
+            }
+
             const fullName = authNameInput.value.trim();
             const username = authUsernameInput.value.trim();
             const password = authPasswordInput.value;
@@ -2399,23 +2455,25 @@
                 
                 // Check if user is super admin (case-insensitive)
                 if (lowerUsername === SUPER_ADMIN_EMAIL.toLowerCase() && password === SUPER_ADMIN_PASSWORD) {
+                    loginFailCount = 0; // reset on success
                     currentPilot = "Super Admin";
                     isGuest = false;
                     isAdmin = true;
                     enterMainDashboard();
                 } else if (lowerUsername === SUPER_ADMIN_EMAIL.toLowerCase()) {
                     // Correct email but wrong password
-                    displayAuthMessage("Invalid password for admin account.");
+                    recordFailedLogin();
                 } else if (users[lowerUsername]) {
                     // User exists in approved list
                     if (users[lowerUsername].password === password) {
+                        loginFailCount = 0; // reset on success
                         currentPilot = users[lowerUsername].originalName;
                         currentPilotEmail = lowerUsername;
                         isGuest = false;
                         isAdmin = false;
                         enterMainDashboard();
                     } else {
-                        displayAuthMessage("Invalid password. Please try again.");
+                        recordFailedLogin();
                     }
                 } else {
                     // Check if pending approval (fetch fresh to be accurate)
@@ -2425,7 +2483,7 @@
                     if (isPending) {
                         displayAuthMessage("⏳ Your account is pending admin approval. Please wait.");
                     } else {
-                        displayAuthMessage("Invalid pilot alias. Please check your username.");
+                        recordFailedLogin();
                     }
                 }
             }
@@ -3204,7 +3262,8 @@
                     <span class="lb-col-name">${entry.displayName}</span>
                     <span class="lb-col-score">${entry.highScore}</span>
                     <span class="lb-col-status">${statusHTML}</span>
-                    <span class="lb-col-action">
+                    <span class="lb-col-action" style="display:flex;gap:4px;align-items:center;">
+                        ${entry.type === "user" ? `<button class="lb-mini-btn lb-mini-extend" onclick="adminResetPassword('${entry.lookupKey}', '${safeName}')" title="Reset password">🔑</button>` : ''}
                         <button class="lb-delete-btn" onclick="deleteLeaderboardAccount('${entry.lookupKey}', '${safeName}', '${entry.type}')" title="Delete account">🚮</button>
                     </span>
                 `;
@@ -3273,6 +3332,69 @@
 
             loadLeaderboard();
             await showInfo(`🔓 "${displayName}" has been unlocked and can play again.`);
+        }
+
+        // Admin directly sets a new password for any registered user from the Leaderboard.
+        // Uses the time-input modal repurposed as a text-input prompt.
+        async function adminResetPassword(lookupKey, displayName) {
+            const confirmed = await showConfirm(
+                "Reset password?",
+                `Set a new password for "${displayName}"?`
+            );
+            if (!confirmed) return;
+
+            // Reuse the time-input modal as a simple text input for the new password
+            timeInputModalTitle.textContent = "Set New Password";
+            timeInputModalMessage.textContent = `Enter a new password for "${displayName}":`;
+            timeInputHours.style.display = "none";
+            timeInputMinutes.placeholder = "New password...";
+            timeInputMinutes.type = "text";
+            timeInputMinutes.value = "";
+            timeInputConfirmBtn.textContent = "✅ Set Password";
+            timeInputModalOverlay.classList.add("active");
+            timeInputMinutes.focus();
+
+            const newPassword = await new Promise((resolve) => {
+                function onConfirm() {
+                    const val = timeInputMinutes.value.trim();
+                    if (!val || val.length < 4) return; // don't close if too short
+                    cleanup(val);
+                }
+                function onCancel() { cleanup(null); }
+                function cleanup(result) {
+                    timeInputModalOverlay.classList.remove("active");
+                    // Restore defaults for next time-grant use
+                    timeInputHours.style.display = "";
+                    timeInputMinutes.placeholder = "Minutes";
+                    timeInputMinutes.type = "number";
+                    timeInputConfirmBtn.textContent = "✅ Grant Time";
+                    timeInputConfirmBtn.removeEventListener("click", onConfirm);
+                    timeInputCancelBtn.removeEventListener("click", onCancel);
+                    resolve(result);
+                }
+                timeInputConfirmBtn.addEventListener("click", onConfirm);
+                timeInputCancelBtn.addEventListener("click", onCancel);
+            });
+
+            if (!newPassword) return;
+
+            await syncCloudData();
+            let users = {};
+            const savedUsers = storage.getItem("starCollectorUsers");
+            if (savedUsers) {
+                try { users = JSON.parse(savedUsers); } catch (e) { users = {}; }
+            }
+
+            if (!users[lookupKey]) {
+                await showInfo("Could not find that account. Please refresh the leaderboard.");
+                return;
+            }
+
+            users[lookupKey].password = newPassword;
+            await safeCloudUpdate("starCollectorUsers", users);
+
+            loadLeaderboard();
+            await showInfo(`✅ Password for "${displayName}" has been reset.`);
         }
 
         // Deletes a student's account entirely: removes them from approved users
