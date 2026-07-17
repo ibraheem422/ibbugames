@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Star Collector</title>
+    <title>Star Collector Game For Kids</title>
     <!-- URL-Encoded SVG Favicon to ensure the golden star emoji displays in the browser tab -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E⭐%3C/text%3E%3C/svg%3E">
     <style>
@@ -1129,6 +1129,7 @@
             <span class="stat-box">Score: <span id="scoreText">0</span></span>
             <span class="stat-box">Time: <span id="timerText">00:00</span></span>
             <span class="stat-box">Level: <span id="levelText">1</span></span>
+            <span class="stat-box" id="inGameLimitBox" style="display:none;">⏱ <span id="inGameLimitText">--</span></span>
         </div>
         
         <canvas id="gameCanvas" width="500" height="400"></canvas>
@@ -1196,6 +1197,8 @@
         const highScoreText = document.getElementById("highScoreText");
         const playTimeRemainingBadge = document.getElementById("playTimeRemainingBadge");
         const playTimeRemainingText = document.getElementById("playTimeRemainingText");
+        const inGameLimitBox = document.getElementById("inGameLimitBox");
+        const inGameLimitText = document.getElementById("inGameLimitText");
         const appSearchInput = document.getElementById("appSearchInput");
         const appSearchResults = document.getElementById("appSearchResults");
         
@@ -1215,6 +1218,7 @@
         const leaderboardBtn = document.getElementById("leaderboardBtn");
         const leaderboardBtnContainer = document.getElementById("leaderboardBtnContainer");
         const backFromLeaderboardBtn = document.getElementById("backFromLeaderboardBtn");
+        const leaderboardRefreshBtn = document.getElementById("leaderboardRefreshBtn");
         const guestNamePanel = document.getElementById("guestNamePanel");
         const guestWaitingPanel = document.getElementById("guestWaitingPanel");
         const resetRequestPanel = document.getElementById("resetRequestPanel");
@@ -1568,6 +1572,18 @@
                     await safeCloudUpdate("starCollectorPlayLimits", allLimits);
                     forceEndGameDueToLimit({ locked: true, resetsAt: new Date(record.lockExpiresAt) });
                 }
+                // Update the in-game remaining time display
+                if (!isAdmin && inGameLimitBox) {
+                    if (record.remainingMs > 0) {
+                        inGameLimitBox.style.display = "inline-flex";
+                        inGameLimitText.textContent = formatDuration(record.remainingMs);
+                        // Turn red when under 5 minutes
+                        inGameLimitBox.style.color = record.remainingMs <= 5 * 60 * 1000 ? "#d9534f" : "";
+                    } else {
+                        inGameLimitBox.style.display = "none";
+                    }
+                }
+
                 // Normal deduction: localStorage only, no JSONBin call
             }, DEDUCTION_TICK_MS);
         }
@@ -3445,6 +3461,13 @@
             updateURL("Leaderboard");
         });
 
+        leaderboardRefreshBtn.addEventListener("click", async () => {
+            leaderboardRefreshBtn.textContent = "🔄 Refreshing...";
+            invalidateBinCache();
+            await loadLeaderboard();
+            leaderboardRefreshBtn.textContent = "🔄 Refresh Leaderboard";
+        });
+
         backFromLeaderboardBtn.addEventListener("click", () => {
             leaderboardPanel.style.display = "none";
             mainMenuPanel.style.display = "block";
@@ -3620,6 +3643,7 @@
             await ensurePlayWindowStarted();
             stopPlayTimeBadgeTicker();
             startActivePlayDeduction();
+            if (!isAdmin) inGameLimitBox.style.display = "inline-flex";
 
             let missedGames = getMissedGames();
             if (index < 0 || index >= missedGames.length) return;
@@ -3719,6 +3743,7 @@
             cancelAnimationFrame(animationId);
             stopTimer();
             stopActivePlayDeduction();
+            inGameLimitBox.style.display = "none";
 
             // Sync the updated remainingMs to cloud now that the game ended cleanly,
             // so the leaderboard on other devices shows the correct remaining time.
@@ -3959,6 +3984,7 @@
             await ensurePlayWindowStarted();
             stopPlayTimeBadgeTicker();
             startActivePlayDeduction();
+            if (!isAdmin) inGameLimitBox.style.display = "inline-flex";
 
             const difficulty = difficultySelect.value;
 
