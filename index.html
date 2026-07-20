@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Star Collector Game For Kids</title>
+    <title>Star Collector</title>
     <!-- URL-Encoded SVG Favicon to ensure the golden star emoji displays in the browser tab -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E⭐%3C/text%3E%3C/svg%3E">
     <style>
@@ -1118,6 +1118,14 @@
                     </select>
                 </div>
 
+                <div class="menu-element" style="align-items: flex-start; margin-bottom: 15px;">
+                    <label for="timeFormatSelect" style="font-size: 15px; font-weight: bold; margin-bottom: 6px; color: var(--label-color); text-align: left;">Time Format:</label>
+                    <select id="timeFormatSelect">
+                        <option value="12">12-Hour (e.g. 3:23 PM)</option>
+                        <option value="24">24-Hour (e.g. 15:23)</option>
+                    </select>
+                </div>
+
                 <div class="menu-element" style="margin-top: 25px;">
                     <button id="backBtn" class="secondary-btn">⬅️ Back to Menu</button>
                 </div>
@@ -1242,6 +1250,7 @@
         const backFromAdminBtn = document.getElementById("backFromAdminBtn");
         const difficultySelect = document.getElementById("difficulty");
         const themeModeSelect = document.getElementById("themeMode");
+        const timeFormatSelect = document.getElementById("timeFormatSelect");
         
         const statsDiv = document.getElementById("stats");
         const controlsDiv = document.getElementById("controls");
@@ -1620,7 +1629,12 @@
 
         // Formats a Date as a simple HH:MM time string for the lockout message.
         function formatTimeOnly(date) {
-            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const use24 = storage.getItem("starCollectorTimeFormat") === "24";
+            return date.toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: !use24
+            });
         }
 
         // Builds the right lockout message depending on whether this is a normal
@@ -4082,8 +4096,8 @@
         });
 
         resetBothBtn.addEventListener("click", function() {
-            score = 0;
-            level = 1;
+            score = 00;
+            level = 01;
             scoreText.textContent = score;
             levelText.textContent = level;
             updateSpeedForLevel();
@@ -4104,8 +4118,7 @@
             // Turn off timer
             stopTimer();
             stopActivePlayDeduction();
-
-            // Sync updated remainingMs to cloud on clean exit
+            inGameLimitBox.style.display = "none";
             const savedLimitsEG = storage.getItem("starCollectorPlayLimits");
             if (savedLimitsEG && !isAdmin) {
                 try {
